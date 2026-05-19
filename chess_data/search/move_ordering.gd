@@ -200,6 +200,10 @@ class Killers:
 	var move_a: Move
 	var move_b: Move
 
+	func _init() -> void:
+		move_a = Move.NULL_MOVE
+		move_b = Move.NULL_MOVE
+
 	func add(move: Move) -> void:
 		if move.value != move_a.value:
 			move_b = move_a

@@ -11,11 +11,13 @@ static func _static_init() -> void:
 	_tables[Piece.make_piece(Piece.BISHOP, Piece.WHITE)] = bishops
 	_tables[Piece.make_piece(Piece.QUEEN, Piece.WHITE)] = queens
 
+	_tables[Piece.make_piece(Piece.KING, Piece.WHITE)] = king_start
 	_tables[Piece.make_piece(Piece.PAWN, Piece.BLACK)] = get_flipped_table(pawns)
 	_tables[Piece.make_piece(Piece.ROOK, Piece.BLACK)] = get_flipped_table(rooks)
 	_tables[Piece.make_piece(Piece.KNIGHT, Piece.BLACK)] = get_flipped_table(knights)
 	_tables[Piece.make_piece(Piece.BISHOP, Piece.BLACK)] = get_flipped_table(bishops)
 	_tables[Piece.make_piece(Piece.QUEEN, Piece.BLACK)] = get_flipped_table(queens)
+	_tables[Piece.make_piece(Piece.KING, Piece.BLACK)] = get_flipped_table(king_start)
 
 static func read(table: Array[int], square: int, is_white: bool) -> int:
 	if is_white:

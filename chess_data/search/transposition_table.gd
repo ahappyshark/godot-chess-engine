@@ -32,7 +32,9 @@ func clear() -> void:
 
 var index: int:
 	get:
-		return board.current_game_state.zobrist_key % count
+		# count is always a power of 2 (size_mb * 1024*1024 / 16), so & avoids
+		# the negative result that % gives on negative Zobrist keys.
+		return board.current_game_state.zobrist_key & (count - 1)
 
 
 func try_get_stored_move() -> Move:
@@ -83,7 +85,7 @@ func correct_retrieved_mate_score(score: int, num_ply_searched: int) -> int:
 
 
 func get_entry(zobrist_key: int) -> Entry:
-	return entries[zobrist_key % entries.size()]
+	return entries[zobrist_key & (entries.size() - 1)]
 
 
 class Entry:

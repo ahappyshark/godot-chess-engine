@@ -50,8 +50,6 @@ func _init(board: Board) -> void:
 
 	move_generator.promotions_to_generate = MoveGenerator.PromotionMode.QUEEN_AND_KNIGHT
 
-	search(1, 0, NEGATIVE_INFINITY, POSITIVE_INFINITY)
-
 
 func start_search() -> void:
 	best_eval_this_iteration = 0
@@ -150,8 +148,7 @@ func search(ply_remaining: int, ply_from_root: int, alpha: int, beta: int, num_e
 	if ply_remaining == 0:
 		return quiescence_search(alpha, beta)
 
-	var moves: Array = []
-	move_generator.generate_moves(board, moves, false)
+	var moves: Array = move_generator.generate_moves(board, false)
 	var prev_best_move: Move = best_move if ply_from_root == 0 else transposition_table.try_get_stored_move()
 	move_orderer.order_moves(prev_best_move, board, moves, move_generator.opponent_attack_map, move_generator.opponent_pawn_attack_map, false, ply_from_root)
 
@@ -243,8 +240,7 @@ func quiescence_search(alpha: int, beta: int) -> int:
 	if eval > alpha:
 		alpha = eval
 
-	var moves: Array = []
-	move_generator.generate_moves(board, moves, true)
+	var moves: Array = move_generator.generate_moves(board, true)
 	move_orderer.order_moves(Move.NULL_MOVE, board, moves, move_generator.opponent_attack_map, move_generator.opponent_pawn_attack_map, true, 0)
 
 	for i in moves.size():
