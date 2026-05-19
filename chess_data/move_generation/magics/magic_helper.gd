@@ -30,8 +30,10 @@ static func create_movement_mask(square_index: int, ortho: bool) -> int:
 			var coord: Vector2i = start_coord + dir * dst
 			var next_coord: Vector2i = start_coord + dir * (dst + 1)
 
-			if BoardHelper.is_fr_light_square(next_coord.x, next_coord.y) or (next_coord.x >= 0 and next_coord.x < 8 and next_coord.y >= 0 and next_coord.y < 8):
-				mask = BitBoardUtility.set_square(mask, BoardHelper.index_from_values(coord.x, coord.y))
+			if coord.x >= 0 and coord.x < 8 and coord.y >= 0 and coord.y < 8:
+				# Only include this square if the next one is also on-board (i.e. not an edge blocker)
+				if next_coord.x >= 0 and next_coord.x < 8 and next_coord.y >= 0 and next_coord.y < 8:
+					mask = BitBoardUtility.set_square(mask, BoardHelper.index_from_values(coord.x, coord.y))
 			else:
 				break
 

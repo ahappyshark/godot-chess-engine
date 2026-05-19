@@ -2,14 +2,14 @@ class_name PgnCreator
 
 
 static func create_pgn(moves: Array) -> String:
-	return create_pgn_with_result(moves, GameResult.IN_PROGRESS, FenUtility.START_POSITION_FEN)
+	return create_pgn_with_result(moves, Arbiter.GameResult.IN_PROGRESS, FenUtility.START_POSITION_FEN)
 
 
-static func create_pgn_from_board(board: Board, result: GameResult, white_name: String = "", black_name: String = "") -> String:
+static func create_pgn_from_board(board: Board, result: Arbiter.GameResult, white_name: String = "", black_name: String = "") -> String:
 	return create_pgn_with_result(board.all_game_moves, result, board.game_start_fen, white_name, black_name)
 
 
-static func create_pgn_with_result(moves: Array, result: GameResult, start_fen: String, white_name: String = "", black_name: String = "") -> String:
+static func create_pgn_with_result(moves: Array, result: Arbiter.GameResult, start_fen: String, white_name: String = "", black_name: String = "") -> String:
 	start_fen = start_fen.replace("\n", "").replace("\r", "")
 
 	var pgn: String = ""
@@ -23,7 +23,7 @@ static func create_pgn_with_result(moves: Array, result: GameResult, start_fen: 
 
 	if start_fen != FenUtility.START_POSITION_FEN:
 		pgn += "[FEN \"%s\"]\n" % start_fen
-	if result not in [GameResult.NOT_STARTED, GameResult.IN_PROGRESS]:
+	if result not in [Arbiter.GameResult.NOT_STARTED, Arbiter.GameResult.IN_PROGRESS]:
 		pgn += "[Result \"%s\"]\n" % result
 
 	for ply_count: int in range(moves.size()):

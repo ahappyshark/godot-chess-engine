@@ -24,7 +24,8 @@ const BLACK_ROOK: int = ROOK | BLACK
 const BLACK_QUEEN: int = QUEEN | BLACK
 const BLACK_KING: int = KING | BLACK
 
-const MAX_PIECE_INDEX: int = BLACK_KING
+# BLACK_QUEEN (6|8 = 14) is the highest index actually used in piece_bitboards/tables
+const MAX_PIECE_INDEX: int = 14
 const COLOR_MASK: int = 8
 const TYPE_MASK: int = 7
 
@@ -43,13 +44,13 @@ static func piece_type(piece: int) -> int:
 	return piece & TYPE_MASK
 
 static func is_color(piece: int, color: int) -> bool:
-	return (piece & color) != 0
+	return (piece & COLOR_MASK) == color
 
 static func is_white(piece: int) -> bool:
-	return is_color(piece, WHITE)
+	return (piece & COLOR_MASK) == WHITE
 
 static func is_opponent_color(piece: int, color: int) -> bool:
-	return (piece & color) == 0
+	return piece_type(piece) != NONE and (piece & COLOR_MASK) != color
 
 static func is_orthogonal_slider(piece: int) -> bool:
 	return piece_type(piece) == QUEEN or piece_type(piece) == ROOK

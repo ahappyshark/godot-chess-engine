@@ -215,10 +215,10 @@ static func _static_init() -> void:
 		for square_b in 64:
 			var c_a: Coord = BoardHelper.coord_from_index(square_a)
 			var c_b: Coord = BoardHelper.coord_from_index(square_b)
-			var delta: Coord = c_b - c_a
+			var delta: Coord = c_b.minus(c_a)
 			var dir: Coord = Coord.new(sign(delta.file_index), sign(delta.rank_index))
 			for i in range(-8, 8):
-				var coord: Coord = BoardHelper.coord_from_index(square_a) + dir * i
+				var coord: Coord = BoardHelper.coord_from_index(square_a).plus(dir.multiply(i))
 				if coord.is_valid_square():
 					align_mask[square_a][square_b] |= 1 << BoardHelper.index_from_coord(coord)
 
@@ -233,7 +233,7 @@ static func _static_init() -> void:
 		for square_index in 64:
 			var square: Coord = BoardHelper.coord_from_index(square_index)
 			for i in 8:
-				var coord: Coord = square + _dir_offsets_2d[dir_index] * i
+				var coord: Coord = square.plus(_dir_offsets_2d[dir_index].multiply(i))
 				if coord.is_valid_square():
 					dir_ray_mask[dir_index][square_index] |= 1 << BoardHelper.index_from_coord(coord)
 				else:

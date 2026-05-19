@@ -319,9 +319,9 @@ func _calculate_attack_data() -> void:
 	var start_dir_index: int = 0
 	var end_dir_index: int = 8
 
-	if board.queens[enemy_index].size() == 0:
-		start_dir_index = 0 if board.rooks[enemy_index].size() > 0 else 4
-		end_dir_index = 8 if board.bishops[enemy_index].size() > 0 else 4
+	if board.queens[enemy_index].count() == 0:
+		start_dir_index = 0 if board.rooks[enemy_index].count() > 0 else 4
+		end_dir_index = 8 if board.bishops[enemy_index].count() > 0 else 4
 
 	for dir in range(start_dir_index, end_dir_index):
 		var is_diagonal: bool = dir > 3

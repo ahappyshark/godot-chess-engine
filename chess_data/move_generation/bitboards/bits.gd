@@ -28,7 +28,7 @@ static var black_forward_file_mask: Array[int]
 static var triple_file_mask: Array[int]
 
 
-static func _static_init() -> void:
+static func initialize() -> void:
 	file_mask = []
 	file_mask.resize(8)
 	adjacent_file_masks = []
@@ -63,13 +63,18 @@ static func _static_init() -> void:
 		var file: int = BoardHelper.file_index(square)
 		var rank: int = BoardHelper.rank_index(square)
 		var adjacent_files: int = FILE_A << max(0, file - 1) | FILE_A << min(7, file + 1)
-		var white_forward_mask: int = ~(-1 >> (64 - 8 * (rank + 1)))
+
+		# All squares strictly above this rank — use left shift, not arithmetic right shift.
+		var shift_amount: int = 8 * (rank + 1)
+		var white_forward_mask: int = -1 << shift_amount if shift_amount < 64 else 0
 		var black_forward_mask: int = (1 << (8 * rank)) - 1
 
 		white_passed_pawn_mask[square] = (FILE_A << file | adjacent_files) & white_forward_mask
 		black_passed_pawn_mask[square] = (FILE_A << file | adjacent_files) & black_forward_mask
 
-		var adjacent: int = (1 << (square - 1) | 1 << (square + 1)) & adjacent_files
+		var sq_minus: int = 1 << (square - 1) if square > 0 else 0
+		var sq_plus: int = 1 << (square + 1) if square < 63 else 0
+		var adjacent: int = (sq_minus | sq_plus) & adjacent_files
 		white_pawn_support_mask[square] = adjacent | BitBoardUtility.shift(adjacent, -8)
 		black_pawn_support_mask[square] = adjacent | BitBoardUtility.shift(adjacent, +8)
 
