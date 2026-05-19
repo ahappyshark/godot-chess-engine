@@ -36,15 +36,15 @@ var empty_or_enemy_squares: int
 var move_type_mask: int
 
 
-func generate_moves(board: Board, captures_only: bool = false) -> Array:
+func generate_moves(temp_board: Board, captures_only: bool = false) -> Array:
 	var moves: Array = []
 	moves.resize(MAX_MOVES)
-	generate_moves_into(board, moves, captures_only)
+	generate_moves_into(temp_board, moves, captures_only)
 	return moves
 
 
-func generate_moves_into(board: Board, moves: Array, captures_only: bool = false) -> int:
-	self.board = board
+func generate_moves_into(temp_board: Board, moves: Array, captures_only: bool = false) -> int:
+	board = temp_board
 	generate_quiet_moves = not captures_only
 
 	_setup()

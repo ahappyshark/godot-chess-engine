@@ -20,12 +20,12 @@ static var black_pawn_attacks: Array[int] = []
 
 # Logical (unsigned) right shift. GDScript >> is arithmetic (sign-extending),
 # which corrupts bitboards with bit 63 set. This masks off the extended sign bits.
-static func lsr(value: int, shift: int) -> int:
-	if shift <= 0:
+static func lsr(value: int, shift_int: int) -> int:
+	if shift_int <= 0:
 		return value
-	if shift >= 64:
+	if shift_int >= 64:
 		return 0
-	return (value >> shift) & (0x7FFFFFFFFFFFFFFF >> (shift - 1))
+	return (value >> shift_int) & (0x7FFFFFFFFFFFFFFF >> (shift_int - 1))
 
 # Returns [new_bitboard, square_index] — pops the least-significant set bit.
 static func pop_lsb(b: int) -> Array:
