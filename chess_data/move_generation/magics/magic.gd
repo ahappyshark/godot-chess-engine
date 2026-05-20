@@ -34,7 +34,17 @@ func get_rook_attacks(square: int, blockers: int) -> int:
 
 func get_bishop_attacks(square: int, blockers: int) -> int:
 	var shift: int = PrecomputedMagics.BISHOP_SHIFTS[square]
-	var key: int = BitBoardUtility.lsr((blockers & bishop_mask[square]) * PrecomputedMagics.BISHOP_MAGICS[square], shift)
+	var masked: int = blockers & bishop_mask[square]
+	var key: int = BitBoardUtility.lsr(masked * PrecomputedMagics.BISHOP_MAGICS[square], shift)
+	
+	#if square == 58:
+		#
+		#print("masked occupancy: ", masked)
+		#print("magic: ", PrecomputedMagics.BISHOP_MAGICS[square])
+		#print("shift: ", shift)
+		#print("key: ", key)
+		#print("attack: ", bishop_attacks[square][key])
+	
 	return bishop_attacks[square][key]
 
 func _create_table(square: int, rook: bool, magic: int, left_shift: int) -> Array:

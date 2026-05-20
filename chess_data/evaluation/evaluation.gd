@@ -82,7 +82,7 @@ func evaluate_pawns(color_index: int) -> int:
 	var pawns: PieceList = board.pawns[color_index]
 	var is_white: bool = color_index == board.WHITE_INDEX
 	var opponent_pawns = board.piece_bitboards[Piece.make_piece(Piece.PAWN, Piece.BLACK if is_white else Piece.WHITE)]
-	var friendly_pawns = board.piece_bitboards[Piece.make_piece(Piece.PAWN, Piece.BLACK if is_white else Piece.WHITE)]
+	var friendly_pawns = board.piece_bitboards[Piece.make_piece(Piece.PAWN, Piece.WHITE if is_white else Piece.BLACK)]
 	var masks: Array[int] = Bits.white_passed_pawn_mask if is_white else Bits.black_passed_pawn_mask
 	var bonus: int = 0
 	var num_isolated_pawns: int = 0

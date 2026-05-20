@@ -12,6 +12,8 @@ const PERFT_DICT: Dictionary = {
 
 # or attach to a Node and call run_tests() from _ready()
 func _ready() -> void:
+	# perft_divide_from_fen("rnbqkbnr/ppp1pppp/8/3p4/4P3/P7/1PPP1PPP/RNBQKBNR b KQkq - 0 2", 1)
+	# perft_divide(4)
 	run_tests()
 	
 static func run_tests() -> void:
@@ -64,3 +66,56 @@ static func _new_board() -> Board:
 	var board = Board.new()
 	board.load_position(FenUtility.position_from_fen(FenUtility.START_POSITION_FEN))
 	return board
+	
+static func _move_to_uci(move: Move) -> String:
+	const FILE_NAMES = "abcdefgh"
+	var from = move.start_square
+	var to = move.target_square
+	var result = "%s%d%s%d" % [
+		FILE_NAMES[from % 8], (from / 8) + 1,
+		FILE_NAMES[to % 8], (to / 8) + 1
+	]
+	if move.is_promotion:
+		match move.move_flag:
+			Move.PROMOTE_TO_QUEEN_FLAG:  result += "q"
+			Move.PROMOTE_TO_ROOK_FLAG:   result += "r"
+			Move.PROMOTE_TO_BISHOP_FLAG: result += "b"
+			Move.PROMOTE_TO_KNIGHT_FLAG: result += "n"
+	return result
+	
+static func perft_divide(depth: int) -> void:
+	var board = _new_board()
+	var gen = MoveGenerator.new()
+	var moves = gen.generate_moves(board)
+	var total = 0
+	var results = []
+
+	for move in moves:
+		board.make_move(move)
+		var count = _perft(board, depth - 1)
+		board.unmake_move(move)
+		total += count
+		results.append([_move_to_uci(move), count])
+
+	results.sort_custom(func(a, b): return a[0] < b[0])
+	for r in results:
+		print("%s: %d" % [r[0], r[1]])
+	print("Total: %d" % total)
+
+static func perft_divide_from_fen(fen: String, depth: int) -> void:
+	var board = Board.new()
+	board.load_position(FenUtility.position_from_fen(fen))
+	var gen = MoveGenerator.new()
+	var moves = gen.generate_moves(board)
+	var total = 0
+	var results = []
+	for move in moves:
+		board.make_move(move)
+		var count = _perft(board, depth - 1)
+		board.unmake_move(move)
+		total += count
+		results.append([_move_to_uci(move), count])
+	results.sort_custom(func(a, b): return a[0] < b[0])
+	for r in results:
+		print("%s: %d" % [r[0], r[1]])
+	print("Total: %d" % total)

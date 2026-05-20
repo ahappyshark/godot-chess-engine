@@ -81,6 +81,11 @@ func _setup() -> void:
 	enemy_pieces = board.colour_bitboards[enemy_index]
 	friendly_pieces = board.colour_bitboards[friendly_index]
 	all_pieces = board.all_pieces_bitboard
+	# DEBUG
+	var d7: int = 51
+	#print("d7 in all_pieces: ", (all_pieces >> d7) & 1)  # should be 0
+	#print("d7 in white bitboard: ", (board.colour_bitboards[board.WHITE_INDEX] >> d7) & 1)
+	#print("d7 in black bitboard: ", (board.colour_bitboards[board.BLACK_INDEX] >> d7) & 1)
 	empty_squares = ~all_pieces
 	empty_or_enemy_squares = empty_squares | enemy_pieces
 	move_type_mask = -1 if generate_quiet_moves else enemy_pieces
@@ -143,6 +148,11 @@ func _generate_sliding_moves(moves: Array) -> void:
 		var lsb = BitBoardUtility.pop_lsb(diagonal_sliders)
 		diagonal_sliders = lsb[0]
 		var start_square: int = lsb[1]
+		# DEBUG
+		var raw_attacks = Magic.get_bishop_attacks(start_square, all_pieces)
+		#print("Bishop/Queen diagonal from sq %d | raw_attacks: %d | move_mask: %d | result: %d" % [
+			#start_square, raw_attacks, move_mask, raw_attacks & move_mask
+		#])
 		var move_squares: int = Magic.get_bishop_attacks(start_square, all_pieces) & move_mask
 		if _is_pinned(start_square):
 			move_squares &= PrecomputedMoveData.align_mask[start_square][friendly_king_square]
