@@ -5,6 +5,8 @@ const COLOR_MOVE:   Color = Color(0.20, 0.80, 0.20, 0.50)  # green  — safe des
 const COLOR_THREAT: Color = Color(0.80, 0.15, 0.15, 0.45)  # red    — opponent threat
 const COLOR_RISKY:  Color = Color(0.90, 0.55, 0.10, 0.55)  # orange — valid move that's also threatened
 
+var flipped: bool = false
+
 var _move_squares:   Array = []
 var _threat_squares: Array = []
 
@@ -58,4 +60,6 @@ func _draw() -> void:
 func _sq_rect(sq: int) -> Rect2:
 	var file := sq % 8
 	var rank := sq / 8
-	return Rect2(file * TILE_SIZE, (7 - rank) * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+	var vx := (7 - file if flipped else file) * TILE_SIZE
+	var vy := (rank if flipped else 7 - rank) * TILE_SIZE
+	return Rect2(vx, vy, TILE_SIZE, TILE_SIZE)

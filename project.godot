@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="godot-chess-engine"
-run/main_scene="res://scenes/chess_match.tscn"
+run/main_scene="uid://wc3ge8jl7ygy"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
 

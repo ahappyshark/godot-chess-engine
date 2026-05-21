@@ -15,6 +15,7 @@ tile_size = Vector2i(32, 32)
 sources/1 = SubResource("TileSetAtlasSource_01178")
 
 [node name="ChessBoard" type="Node2D" unique_id=1043785501]
+scale = Vector2(2, 2)
 script = ExtResource("2_script")
 
 [node name="Board" type="TileMapLayer" parent="." unique_id=1267240211]

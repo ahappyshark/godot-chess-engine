@@ -9,6 +9,8 @@ const TWEEN_DURATION: float = 0.22
 
 var player_color: int = Piece.WHITE
 var board: Board
+var input_enabled: bool = false
+var _flipped: bool = false
 
 var _gen: MoveGenerator
 var _piece_at_sq: Array  # ChessPiece | null, 0..63
@@ -34,6 +36,8 @@ func reset() -> void:
 	_piece_at_sq.fill(null)
 	highlights.clear()
 	_hovered_sq = -1
+	_flipped = (player_color == Piece.BLACK)
+	highlights.flipped = _flipped
 	board = Board.new()
 	board.load_position(FenUtility.position_from_fen(FenUtility.START_POSITION_FEN))
 	_spawn_pieces()
@@ -90,6 +94,8 @@ func apply_move(move: Move) -> void:
 # --- Input ---
 
 func _input(event: InputEvent) -> void:
+	if not input_enabled:
+		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
 			_begin_drag(event.global_position)
@@ -264,12 +270,14 @@ func _bb_to_squares(bb: int) -> Array:
 func _sq_to_local(sq: int) -> Vector2:
 	var file := sq % 8
 	var rank := sq / 8
-	return Vector2(file * TILE_SIZE + TILE_SIZE * 0.5, (7 - rank) * TILE_SIZE + TILE_SIZE * 0.5)
+	var vx := (7 - file if _flipped else file) * TILE_SIZE + TILE_SIZE * 0.5
+	var vy := (rank if _flipped else 7 - rank) * TILE_SIZE + TILE_SIZE * 0.5
+	return Vector2(vx, vy)
 
 
 func _world_to_sq(local_pos: Vector2) -> int:
-	var file := int(local_pos.x / TILE_SIZE)
-	var rank := 7 - int(local_pos.y / TILE_SIZE)
+	var file := 7 - int(local_pos.x / TILE_SIZE) if _flipped else int(local_pos.x / TILE_SIZE)
+	var rank := int(local_pos.y / TILE_SIZE) if _flipped else 7 - int(local_pos.y / TILE_SIZE)
 	if file < 0 or file > 7 or rank < 0 or rank > 7:
 		return -1
 	return rank * 8 + file

@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://wc3ge8jl7ygy"]
 
 [ext_resource type="Texture2D" uid="uid://bvxwt2q2exvcw" path="res://art/title_screen.png" id="1_fgkus"]
+[ext_resource type="Script" uid="uid://b342gno3m1mgr" path="res://scenes/title_screen.gd" id="1_sa3yf"]
 
 [node name="TitleScreen" type="Control" unique_id=131904480]
 layout_mode = 3
@@ -9,6 +10,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("1_sa3yf")
 
 [node name="Background" type="TextureRect" parent="." unique_id=2033913486]
 layout_mode = 1
@@ -33,3 +35,5 @@ layout_mode = 2
 [node name="Button" type="Button" parent="CenterContainer/VBoxContainer" unique_id=1967143398]
 layout_mode = 2
 text = "Start Game"
+
+[connection signal="pressed" from="CenterContainer/VBoxContainer/Button" to="." method="_on_button_pressed"]

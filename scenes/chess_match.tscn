@@ -26,7 +26,7 @@ offset_right = 40.0
 offset_bottom = 40.0
 
 [node name="ChessBoard" parent="." unique_id=194343665 instance=ExtResource("2_board")]
-position = Vector2(512, 312)
+position = Vector2(383, 127)
 
 [node name="SetupOverlay" type="CanvasLayer" parent="." unique_id=668718503]
 visible = false
@@ -64,6 +64,36 @@ text = "Random"
 layout_mode = 2
 text = "Black"
 
+[node name="GameEndOverlay" type="CanvasLayer" parent="." unique_id=842204847]
+visible = false
+
+[node name="VBoxContainer" type="VBoxContainer" parent="GameEndOverlay" unique_id=472286309]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -4.0
+offset_top = -23.5
+offset_right = 4.0
+offset_bottom = 23.5
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="GameEndOverlay/VBoxContainer" unique_id=971114290]
+layout_mode = 2
+text = "Game Over!"
+
+[node name="Rematch" type="Button" parent="GameEndOverlay/VBoxContainer" unique_id=693762730]
+layout_mode = 2
+text = "Rematch"
+
+[node name="Quit" type="Button" parent="GameEndOverlay/VBoxContainer" unique_id=1340217847]
+layout_mode = 2
+text = "Quit"
+
 [connection signal="pressed" from="SetupOverlay/VBoxContainer/ColorSelect/White" to="." method="_on_white_pressed"]
 [connection signal="pressed" from="SetupOverlay/VBoxContainer/ColorSelect/Random" to="." method="_on_random_pressed"]
 [connection signal="pressed" from="SetupOverlay/VBoxContainer/ColorSelect/Black" to="." method="_on_black_pressed"]
+[connection signal="pressed" from="GameEndOverlay/VBoxContainer/Rematch" to="." method="_on_rematch_pressed"]
+[connection signal="pressed" from="GameEndOverlay/VBoxContainer/Quit" to="." method="_on_quit_pressed"]
