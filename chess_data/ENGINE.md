@@ -11,6 +11,7 @@ code (UI, bots, tests) should connect through.
 ```
 chess_data/
   chess_engine.gd          # Autoload — initialises all subsystems (add to project.godot)
+  book.txt                 # A list of tons of book openings, do not read this file ever.
   core/
     board.gd               # Central mutable game state
     piece.gd               # Piece type/colour constants and helpers
@@ -19,7 +20,7 @@ chess_data/
     game_state.gd          # Immutable snapshot pushed onto Board's history stack
     coord.gd               # (file, rank) coordinate helper
     zobrist.gd             # Zobrist hashing tables (static init)
-    rng_service.gd         # Deterministic RNG used by Zobrist
+    
   move_generation/
     move_generator.gd      # Pseudo-legal + legal move generator
     precomputed_move_data.gd  # Direction rays, alignment masks (static init)
@@ -56,7 +57,7 @@ bots/
 
 scenes/
   chess_board.gd           # Visual board + player input (Node2D scene)
-  chess_match.gd           # Game controller (bot thread management)
+  chess_match.gd           # Game controller (manages the chess match and associated game state)
   chess_piece.gd           # Single piece sprite
   board_highlights.gd      # Square highlight overlay
 
@@ -64,18 +65,23 @@ test/
   chess_test.gd            # Perft tests, make/unmake round-trip, tournament
   headless_game.gd         # Runs a full game without UI
   tournament.gd            # Pits two bots against each other N times
+utilities/
+  rng_service.gd           # Deterministic RNG used by Zobrist and other things
+  game_events.gd           # Autoload single point of reference for all signals connected and emitted
 ```
 
 ---
 
 ## Initialisation order
 
-Two autoloads are required in `project.godot`:
+Four autoloads are required in `project.godot`:
 
 | Order | Name          | Script                              |
 |-------|---------------|-------------------------------------|
-| 1     | `Magic`       | `chess_data/move_generation/magics/magic.gd` |
-| 2     | `ChessEngine` | `chess_data/chess_engine.gd`         |
+| 3     | `RngService`  | `utilities/rng_service.gd` |
+| 3     | `GameEvents`  | `utilities/game_events.gd` |
+| 3     | `Magic`       | `chess_data/move_generation/magics/magic.gd` |
+| 4     | `ChessEngine` | `chess_data/chess_engine.gd`         |
 
 `ChessEngine._ready()` calls:
 1. `BitBoardUtility.initialize()` — builds king/knight/pawn attack tables.
