@@ -1,9 +1,9 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://bbw2751ff4tqk"]
 
-[ext_resource type="Script" path="res://scenes/chess_match.gd" id="1_match"]
-[ext_resource type="PackedScene" path="res://scenes/chess_board.tscn" id="2_board"]
+[ext_resource type="Script" uid="uid://bnmon8n07h6vf" path="res://scenes/chess_match.gd" id="1_match"]
+[ext_resource type="PackedScene" uid="uid://d1rlt857juq6t" path="res://scenes/chess_board.tscn" id="2_board"]
 
-[node name="ChessMatch" type="Node2D"]
+[node name="ChessMatch" type="Node2D" unique_id=797970650]
 script = ExtResource("1_match")
 
-[node name="ChessBoard" parent="." instance=ExtResource("2_board")]
+[node name="ChessBoard" parent="." unique_id=194343665 instance=ExtResource("2_board")]
