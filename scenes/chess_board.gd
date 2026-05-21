@@ -177,7 +177,10 @@ func _handle_hover(global_pos: Vector2) -> void:
 	if code == Piece.NONE:
 		return
 
-	if Piece.is_color(code, player_color) and board.move_colour == player_color:
+	if board.move_colour != player_color:
+		return
+
+	if Piece.is_color(code, player_color):
 		# Own piece: green for safe valid moves, orange for risky ones — no red noise.
 		var all_moves := _gen.generate_moves(board)
 		var piece_moves := all_moves.filter(func(m): return m.start_square == sq)
@@ -187,7 +190,7 @@ func _handle_hover(global_pos: Vector2) -> void:
 		var risky_sqs := threat_sqs.filter(func(s): return move_sqs.has(s))
 		highlights.show_moves(move_sqs)
 		highlights.show_threats(risky_sqs)
-	elif not Piece.is_color(code, player_color):
+	else:
 		# Opponent piece: show its legal destinations in red.
 		highlights.show_threats(_get_piece_attacks(sq))
 
@@ -247,9 +250,10 @@ func _commit_move(move: Move) -> void:
 # --- Helpers ---
 
 func _get_piece_attacks(sq: int) -> Array:
-	board.is_white_to_move = not board.is_white_to_move
-	var opp_moves := _gen.generate_moves(board)
-	board.is_white_to_move = not board.is_white_to_move
+	# Use a clone so we never mutate the shared board that the bot thread may be reading.
+	var clone := Board.create_board_from_source(board)
+	clone.is_white_to_move = not clone.is_white_to_move
+	var opp_moves := _gen.generate_moves(clone)
 	return opp_moves.filter(func(m): return m.start_square == sq) \
 		.map(func(m): return m.target_square)
 
