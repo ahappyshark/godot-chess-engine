@@ -17,8 +17,16 @@ config/icon="res://icon.svg"
 
 [autoload]
 
+RngService="*uid://bxrwpxtmxsd11"
 Magic="*res://chess_data/move_generation/magics/magic.gd"
 ChessEngine="*res://chess_data/chess_engine.gd"
+GameEvents="*uid://ddxnh1jwdyqdu"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
 
 [physics]
 
