@@ -3,7 +3,67 @@
 [ext_resource type="Script" uid="uid://bnmon8n07h6vf" path="res://scenes/chess_match.gd" id="1_match"]
 [ext_resource type="PackedScene" uid="uid://d1rlt857juq6t" path="res://scenes/chess_board.tscn" id="2_board"]
 
-[node name="ChessMatch" type="Node2D" unique_id=797970650]
+[node name="ChessMatch" type="Control" unique_id=489359504]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("1_match")
 
+[node name="Background" type="TextureRect" parent="." unique_id=438414295]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Portrait Placeholder" type="TextureRect" parent="." unique_id=1441221949]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
 [node name="ChessBoard" parent="." unique_id=194343665 instance=ExtResource("2_board")]
+position = Vector2(512, 312)
+
+[node name="SetupOverlay" type="CanvasLayer" parent="." unique_id=668718503]
+visible = false
+
+[node name="VBoxContainer" type="VBoxContainer" parent="SetupOverlay" unique_id=1720408710]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -92.5
+offset_top = -29.0
+offset_right = 92.5
+offset_bottom = 29.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="SetupOverlay/VBoxContainer" unique_id=1182278826]
+layout_mode = 2
+text = "Choose your color"
+horizontal_alignment = 1
+
+[node name="ColorSelect" type="HBoxContainer" parent="SetupOverlay/VBoxContainer" unique_id=64652069]
+layout_mode = 2
+
+[node name="White" type="Button" parent="SetupOverlay/VBoxContainer/ColorSelect" unique_id=1422924439]
+layout_mode = 2
+text = "White"
+
+[node name="Random" type="Button" parent="SetupOverlay/VBoxContainer/ColorSelect" unique_id=1792170616]
+layout_mode = 2
+text = "Random"
+
+[node name="Black" type="Button" parent="SetupOverlay/VBoxContainer/ColorSelect" unique_id=2140950883]
+layout_mode = 2
+text = "Black"
+
+[connection signal="pressed" from="SetupOverlay/VBoxContainer/ColorSelect/White" to="." method="_on_white_pressed"]
+[connection signal="pressed" from="SetupOverlay/VBoxContainer/ColorSelect/Random" to="." method="_on_random_pressed"]
+[connection signal="pressed" from="SetupOverlay/VBoxContainer/ColorSelect/Black" to="." method="_on_black_pressed"]

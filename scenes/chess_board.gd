@@ -1,7 +1,5 @@
 extends Node2D
 
-signal move_made(move: Move)
-
 const ChessPieceScene = preload("res://scenes/chess_piece.tscn")
 const TILE_SIZE: int = 32
 const TWEEN_DURATION: float = 0.22
@@ -29,10 +27,6 @@ func _ready() -> void:
 	_piece_at_sq.resize(64)
 	_piece_at_sq.fill(null)
 	_gen = MoveGenerator.new()
-	board = Board.new()
-	board.load_position(FenUtility.position_from_fen(FenUtility.START_POSITION_FEN))
-	_spawn_pieces()
-
 
 func reset() -> void:
 	for child in pieces.get_children():
@@ -143,7 +137,7 @@ func _end_drag(global_pos: Vector2) -> void:
 
 	if matched != null:
 		_commit_move(matched)
-		move_made.emit(matched)
+		GameEvents.move_made.emit(matched)
 	else:
 		_dragging.position = _sq_to_local(_drag_origin_sq)
 

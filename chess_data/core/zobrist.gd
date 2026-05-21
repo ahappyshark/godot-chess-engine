@@ -1,14 +1,11 @@
 class_name Zobrist
 
-static var _rng: RngService = RngService.new()
 static var pieces_array: Array
 static var castling_rights: Array[int]
 static var en_passant_file: Array[int]
 static var side_to_move: int
 
 static func _static_init() -> void:
-	var rng_seed: int = 29426028
-	_rng.seed_run(rng_seed)
 	pieces_array = []
 	pieces_array.resize(Piece.MAX_PIECE_INDEX + 1)
 	for i: int in Piece.MAX_PIECE_INDEX + 1:
@@ -20,15 +17,15 @@ static func _static_init() -> void:
 
 	for _i: int in 64:
 		for piece: int in Piece.piece_indices:
-			pieces_array[piece].append(_rng.randi64())
+			pieces_array[piece].append(RngService.randi64())
 
 	for i: int in 16:
-		castling_rights[i] = _rng.randi64()
+		castling_rights[i] = RngService.randi64()
 
 	for i: int in 9:
-		en_passant_file[i] = _rng.randi64()
+		en_passant_file[i] = RngService.randi64()
 
-	side_to_move = _rng.randi64()
+	side_to_move = RngService.randi64()
 
 static func calculate_zobrist_key(board: Board) -> int:
 	var zobrist_key: int = 0

@@ -1,9 +1,8 @@
 class_name ChessMatch
-extends Node2D
-
-signal game_over(result: Arbiter.GameResult)
+extends Control
 
 @onready var chess_board: Node2D = $ChessBoard
+@onready var setup_overlay: CanvasLayer = $SetupOverlay
 
 # Set in the editor or call new_game() directly to override.
 @export var player_is_white: bool = true
@@ -14,11 +13,11 @@ var _game_over: bool = false
 
 
 func _ready() -> void:
-	new_game(Piece.WHITE if player_is_white else Piece.BLACK)
-
-
+	setup_overlay.visible = true
+	
 # Call this to start (or restart) a match with the given human color.
 func new_game(human_color: int) -> void:
+	setup_overlay.visible = false
 	_game_over = false
 
 	# Wait for any in-flight bot thread before resetting.
@@ -30,9 +29,9 @@ func new_game(human_color: int) -> void:
 	chess_board.reset()
 
 	# Disconnect stale signal connection before reconnecting.
-	if chess_board.move_made.is_connected(_on_player_move):
-		chess_board.move_made.disconnect(_on_player_move)
-	chess_board.move_made.connect(_on_player_move)
+	if GameEvents.move_made.is_connected(_on_player_move):
+		GameEvents.move_made.disconnect(_on_player_move)
+	GameEvents.move_made.connect(_on_player_move)
 
 	# Board is fresh after reset(), so give the bot the new reference.
 	_bot = SearcherBot.new()
@@ -83,4 +82,17 @@ func _on_bot_done(move: Move) -> void:
 
 func _end_game(result: Arbiter.GameResult) -> void:
 	_game_over = true
-	game_over.emit(result)
+	GameEvents.game_over.emit(result)
+
+
+func _on_white_pressed() -> void:
+	new_game(Piece.WHITE)
+
+
+func _on_black_pressed() -> void:
+	new_game(Piece.BLACK)
+
+
+func _on_random_pressed() -> void:
+	var color: int = Piece.WHITE if RngService.chance(0.5) else Piece.BLACK
+	new_game(color)

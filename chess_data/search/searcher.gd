@@ -7,8 +7,6 @@ const IMMEDIATE_MATE_SCORE: int = 100000
 const POSITIVE_INFINITY: int = 9999999
 const NEGATIVE_INFINITY: int = -POSITIVE_INFINITY
 
-signal on_search_complete(move: Move)
-
 var current_depth: int
 var best_move_so_far: Move:
 	get:
@@ -73,7 +71,7 @@ func start_search() -> void:
 
 	if best_move.is_null:
 		best_move = move_generator.generate_moves(board)[0]
-	on_search_complete.emit(best_move)
+	GameEvents.on_search_complete.emit(best_move)
 	search_cancelled = false
 
 
