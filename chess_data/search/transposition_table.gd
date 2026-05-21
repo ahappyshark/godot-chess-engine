@@ -38,7 +38,8 @@ var index: int:
 
 
 func try_get_stored_move() -> Move:
-	return entries[index].move
+	var m: Move = entries[index].move
+	return m if m != null else Move.NULL_MOVE
 
 
 func try_lookup_evaluation(depth: int, ply_from_root: int, alpha: int, beta: int) -> Dictionary:

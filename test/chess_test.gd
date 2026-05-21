@@ -124,6 +124,6 @@ static func perft_divide_from_fen(fen: String, depth: int) -> void:
 static func _test_tournament() -> void:
 	var t = Tournament.new()
 	t.add_bot(RandomBot.new("RandomBot-A"))
-	t.add_bot(RandomBot.new("RandomBot-B"))
-	t.add_bot(RandomBot.new("RandomBot-C"))
-	t.run_round_robin(2)
+	t.add_bot(MinimaxBot.new())   # depth 2, ~ms per move
+	t.add_bot(SearcherBot.new())  # depth 4 with TT + move ordering, ~ms per move
+	t.run_round_robin(10)
