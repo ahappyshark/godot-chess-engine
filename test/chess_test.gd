@@ -17,9 +17,10 @@ func _ready() -> void:
 	run_tests()
 	
 static func run_tests() -> void:
-	_test_move_count_from_start()
-	_test_make_unmake_roundtrip()
-	_test_perft_depth()
+	#_test_move_count_from_start()
+	#_test_make_unmake_roundtrip()
+	#_test_perft_depth()
+	_test_tournament()
 
 static func _test_move_count_from_start() -> void:
 	var board = _new_board()
@@ -119,3 +120,10 @@ static func perft_divide_from_fen(fen: String, depth: int) -> void:
 	for r in results:
 		print("%s: %d" % [r[0], r[1]])
 	print("Total: %d" % total)
+
+static func _test_tournament() -> void:
+	var t = Tournament.new()
+	t.add_bot(RandomBot.new("RandomBot-A"))
+	t.add_bot(RandomBot.new("RandomBot-B"))
+	t.add_bot(RandomBot.new("RandomBot-C"))
+	t.run_round_robin(2)

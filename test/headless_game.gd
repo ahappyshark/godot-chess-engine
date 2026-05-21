@@ -4,9 +4,9 @@ enum Result { WHITE_WIN, BLACK_WIN, DRAW }
 
 const MAX_MOVES = 300  # prevent infinite games
 
-static func play(white_bot: ChessBot, black_bot: ChessBot, start_fen: String = Board.game_start_fen) -> Result:
+static func play(white_bot: ChessBot, black_bot: ChessBot, start_fen: String = FenUtility.START_POSITION_FEN) -> Result:
 	var board = Board.new()
-	board.load_position(start_fen)
+	board.load_position(FenUtility.position_from_fen(start_fen))
 	
 	white_bot.set_board(board)
 	black_bot.set_board(board)
@@ -17,7 +17,7 @@ static func play(white_bot: ChessBot, black_bot: ChessBot, start_fen: String = B
 		var moves = move_gen.generate_moves(board)
 		
 		if moves.is_empty():
-			if move_gen.in_check(board):
+			if move_gen.in_check():
 				return Result.BLACK_WIN if board.is_white_to_move else Result.WHITE_WIN
 			return Result.DRAW  # stalemate
 		
@@ -27,8 +27,14 @@ static func play(white_bot: ChessBot, black_bot: ChessBot, start_fen: String = B
 		var bot = white_bot if board.is_white_to_move else black_bot
 		var chosen = bot.get_move()
 		
-		# validate the bot didn't return garbage
-		if not moves.has(chosen):
+		# validate the bot didn't return garbage — use value comparison, not reference
+		var is_legal := false
+		for m in moves:
+			if Move.same_move(m, chosen):
+				chosen = m
+				is_legal = true
+				break
+		if not is_legal:
 			push_warning(bot.name + " returned illegal move, picking random")
 			chosen = moves[randi() % moves.size()]
 		
