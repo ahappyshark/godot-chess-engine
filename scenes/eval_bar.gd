@@ -1,14 +1,14 @@
 class_name EvalBar
 extends Control
 
+const MAX_CP: int = 1000
+
 @onready var white_rect: ColorRect = $WhiteRect
 @onready var black_rect: ColorRect = $BlackRect
 
-func update_eval(white_sum: int, black_sum: int) -> void:
-	var total: int = white_sum + black_sum
-	if total == 0:
-		return
-	var white_pct: float = float(white_sum) / float(total)
+func update_eval(score: int) -> void:
+	var clamped: float = clamp(score, -MAX_CP, MAX_CP)
+	var white_pct: float = (clamped + MAX_CP) / float(MAX_CP * 2)
 	var white_height: float = size.y * white_pct
 	
 	var tween = create_tween()

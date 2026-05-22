@@ -8,6 +8,8 @@ var _state: ChessMatchState = ChessMatchState.SETUP
 @onready var setup_overlay: CanvasLayer = $SetupOverlay
 @onready var game_end_overlay: CanvasLayer = $GameEndOverlay
 @onready var game_end_label: Label = $GameEndOverlay/VBoxContainer/Label
+@onready var eval_bars: EvalBar = $EvalBar
+var _evaluation: Evaluation = Evaluation.new()
 # Set in the editor or call new_game() directly to override.
 @export var player_is_white: bool = true
 
@@ -62,6 +64,7 @@ func _on_player_move(_move: Move) -> void:
 		_end_game(result)
 		return
 	_set_state(ChessMatchState.BOT_TURN)
+	_refresh_eval_bar()
 	_trigger_bot()
 
 
@@ -85,6 +88,7 @@ func _on_bot_done(move: Move) -> void:
 		return
 
 	chess_board.apply_move(move)
+	_refresh_eval_bar()
 
 	var result := Arbiter.get_game_state(chess_board.board)
 	if result != Arbiter.GameResult.IN_PROGRESS:
@@ -129,3 +133,7 @@ func _on_game_over(result: Arbiter.GameResult) -> void:
 	else:
 		game_end_label.text = "GAME OVER! You Lost!"
 	game_end_overlay.visible = true
+
+func _refresh_eval_bar() -> void:
+	_evaluation.evaluate(chess_board.board)
+	eval_bars.update_eval(_evaluation.white_eval.sum() - _evaluation.black_eval.sum())
