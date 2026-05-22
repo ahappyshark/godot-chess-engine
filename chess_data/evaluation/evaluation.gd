@@ -28,6 +28,10 @@ func evaluate(p_board: Board) -> int:
 	black_eval.piece_square_score = _evaluate_piece_square_tables(false, black_material.end_game_t)
 	white_eval.pawn_score = evaluate_pawns(Board.WHITE_INDEX)
 	black_eval.pawn_score = evaluate_pawns(Board.BLACK_INDEX)
+	white_eval.mop_up_score = mop_up_eval(true, white_material, black_material)
+	black_eval.mop_up_score = mop_up_eval(false, black_material, white_material)
+	white_eval.pawn_shield_score = king_pawn_shield(Board.WHITE_INDEX, black_material, black_eval.piece_square_score)
+	black_eval.pawn_shield_score = king_pawn_shield(Board.BLACK_INDEX, white_material, white_eval.piece_square_score)
 	# mop-up eval, pawn shield, etc.
 	var perspective: int = 1 if board.is_white_to_move else -1
 	return (white_eval.sum() - black_eval.sum()) * perspective
