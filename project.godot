@@ -21,6 +21,7 @@ RngService="*uid://bxrwpxtmxsd11"
 Magic="*res://chess_data/move_generation/magics/magic.gd"
 ChessEngine="*res://chess_data/chess_engine.gd"
 GameEvents="*uid://ddxnh1jwdyqdu"
+DialogueManager="*uid://r25ppce53kx3"
 
 [display]
 

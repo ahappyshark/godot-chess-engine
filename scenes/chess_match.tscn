@@ -27,7 +27,32 @@ offset_right = 40.0
 offset_bottom = 40.0
 
 [node name="ChessBoard" parent="." unique_id=194343665 instance=ExtResource("2_board")]
-position = Vector2(383, 127)
+position = Vector2(512, 302)
+
+[node name="EvalBar" type="Control" parent="." unique_id=1750679761]
+anchors_preset = 0
+offset_left = 492.0
+offset_top = 302.0
+offset_right = 512.0
+offset_bottom = 558.0
+script = ExtResource("3_3yth6")
+
+[node name="WhiteRect" type="ColorRect" parent="EvalBar" unique_id=1798959552]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BlackRect" type="ColorRect" parent="EvalBar" unique_id=467457050]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 1)
 
 [node name="SetupOverlay" type="CanvasLayer" parent="." unique_id=668718503]
 visible = false
@@ -92,31 +117,6 @@ text = "Rematch"
 [node name="Quit" type="Button" parent="GameEndOverlay/VBoxContainer" unique_id=1340217847]
 layout_mode = 2
 text = "Quit"
-
-[node name="EvalBar" type="Control" parent="." unique_id=1750679761]
-anchors_preset = 0
-offset_left = 363.0
-offset_top = 128.0
-offset_right = 383.0
-offset_bottom = 640.0
-script = ExtResource("3_3yth6")
-
-[node name="WhiteRect" type="ColorRect" parent="EvalBar" unique_id=1798959552]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="BlackRect" type="ColorRect" parent="EvalBar" unique_id=467457050]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0, 0, 0, 1)
 
 [connection signal="pressed" from="SetupOverlay/VBoxContainer/ColorSelect/White" to="." method="_on_white_pressed"]
 [connection signal="pressed" from="SetupOverlay/VBoxContainer/ColorSelect/Random" to="." method="_on_random_pressed"]

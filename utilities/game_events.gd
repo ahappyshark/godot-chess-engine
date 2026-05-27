@@ -33,3 +33,8 @@ signal player_off_book_first_move
 signal piece_hanging(color: int, cell: Vector2i)    # ChessPiece.PlayerColor
 signal material_swing(delta: float)
 signal endgame_entered
+
+# --- Dialogue Hooks ---
+signal dialogue_started
+signal dialogue_finished
+signal advance_requested

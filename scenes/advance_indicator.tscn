@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://0ltcwkblxhdi"]
+
+[ext_resource type="Texture2D" uid="uid://ox7l7uoyl6h3" path="res://scenes/arrow.png" id="1_g5e8t"]
+
+[node name="AdvanceIndicator" type="Control" unique_id=139171588]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 64.0
+offset_bottom = 48.0
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=522731848]
+layout_mode = 0
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -64.0
+offset_top = -48.0
+offset_right = -24.0
+texture = ExtResource("1_g5e8t")
+expand_mode = 1
+stretch_mode = 5

@@ -19,7 +19,9 @@ var _game_over: bool = false
 
 
 func _ready() -> void:
+	DialogueManager.run("res://new_game_dialogue.json")
 	setup_overlay.visible = true
+	
 	
 # Call this to start (or restart) a match with the given human color.
 func new_game(human_color: int) -> void:

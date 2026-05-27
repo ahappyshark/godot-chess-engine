@@ -1,0 +1,17 @@
+{
+  "start": "intro",
+  "blocks": {
+    "intro": {
+      "lines": [
+        {
+          "speaker": "Grublak",
+          "text": "Welcome. Please choose your color, though it will hardly matter."
+        },
+        {
+          "speaker": "Grublak",
+          "text": "I am the greatest chess player in the world."
+        }
+      ]
+    }
+  }
+}
