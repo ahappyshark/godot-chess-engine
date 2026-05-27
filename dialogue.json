@@ -1,0 +1,32 @@
+{
+  "start": "intro",
+  "blocks": {
+    "intro": {
+      "lines": [
+        {
+          "speaker": "Grublak",
+          "portrait": "grublak_smug",
+          "text": "You dare sit across from ME?"
+        },
+        {
+          "speaker": "Grublak",
+          "portrait": "grublak_angry",
+          "text": "Bold. Stupid, but bold.",
+          "choices": [
+            { "label": "Say nothing.", "next": "intro_quiet" },
+            { "label": "Smile back.", "next": "intro_smile" }
+          ]
+        }
+      ]
+    },
+    "intro_quiet": {
+      "lines": [
+        {
+          "speaker": "Grublak",
+          "portrait": "grublak_confused",
+          "text": "...Hmph."
+        }
+      ]
+    }
+  }
+}
