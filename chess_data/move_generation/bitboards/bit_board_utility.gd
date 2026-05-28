@@ -33,6 +33,13 @@ static func pop_lsb(b: int) -> Array:
 	var new_b: int = b & (b - 1)
 	return [new_b, i]
 
+static func popcount(b: int) -> int:
+	var count: int = 0
+	while b != 0:
+		b &= b - 1
+		count += 1
+	return count
+
 static func trailing_zero_count(b: int) -> int:
 	if b == 0:
 		return 64

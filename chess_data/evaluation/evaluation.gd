@@ -181,30 +181,53 @@ func evaluate_tactics(color_index: int) -> int:
 
 func detect_forks(color_index: int) -> TacticResult:
 	var result = TacticResult.new()
+	var is_white = color_index == Board.WHITE_INDEX
 
+	# Build enemy piece occupancy - everything, including king
+	# King fork = you're threatening mate, worth detecting
+	var enemy_color = Piece.BLACK if is_white else Piece.WHITE
+	var enemy_occ: int = 0
+	enemy_occ |= board.piece_bitboards[Piece.make_piece(Piece.PAWN,   enemy_color)]
+	enemy_occ |= board.piece_bitboards[Piece.make_piece(Piece.KNIGHT, enemy_color)]
+	enemy_occ |= board.piece_bitboards[Piece.make_piece(Piece.BISHOP, enemy_color)]
+	enemy_occ |= board.piece_bitboards[Piece.make_piece(Piece.ROOK,   enemy_color)]
+	enemy_occ |= board.piece_bitboards[Piece.make_piece(Piece.QUEEN,  enemy_color)]
+	enemy_occ |= board.piece_bitboards[Piece.make_piece(Piece.KING,   enemy_color)]
+
+	# Knight forks
+	var knights: PieceList = board.knights[color_index]
+	for i in knights.count():
+		var sq: int = knights.occupied_squares[i]
+		var attacks: int = PrecomputedMoveData.knight_attack_bitboards[sq]
+		var hits: int = attacks & enemy_occ
+		if BitBoardUtility.popcount(hits) >= 2:
+			# Bonus scales with value of pieces being forked
+			result.score += _fork_value(hits, is_white)
+			result.found = true
 
 	return result
 
 func _fork_value(hit_mask: int, attacker_is_white: bool) -> int:
-	# Sum the two lowest-value pieces being hit (you can only take one)
-	# so the fork wins you the lesser of the two threatened pieces
+	# Sum the two lowest-value pieces being hit (you can only take one,
+	# so the fork wins you the lesser of the two threatened pieces)
 	var enemy_color = Piece.BLACK if attacker_is_white else Piece.WHITE
 	var values: Array[int] = []
 
 	var piece_types = [
-		[Piece.PAWN, Evaluation.PAWN_VALUE],
+		[Piece.PAWN,   Evaluation.PAWN_VALUE],
 		[Piece.KNIGHT, Evaluation.KNIGHT_VALUE],
 		[Piece.BISHOP, Evaluation.BISHOP_VALUE],
-		[Piece.ROOK, Evaluation.ROOK_VALUE],
-		[Piece.QUEEN, Evaluation.QUEEN_VALUE],
-		[Piece.KING, 10000]
+		[Piece.ROOK,   Evaluation.ROOK_VALUE],
+		[Piece.QUEEN,  Evaluation.QUEEN_VALUE],
+		[Piece.KING,   10000],
 	]
 
 	for entry in piece_types:
 		var bb: int = board.piece_bitboards[Piece.make_piece(entry[0], enemy_color)]
-		if (bb & hit_mask) != 0:
+		var n: int = BitBoardUtility.popcount(bb & hit_mask)
+		for _j in n:
 			values.append(entry[1])
-	
+
 	if values.size() < 2:
 		return 0
 	values.sort()
