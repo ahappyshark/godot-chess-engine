@@ -74,6 +74,13 @@ var all_game_moves: Array[Move]
 var _all_piece_lists: Array
 var _cached_in_check_value: bool
 var _has_cached_in_check_value: bool
+var _position_data: PositionData = null
+
+
+func get_position_data() -> PositionData:
+	if _position_data == null:
+		_position_data = PositionData.compute(self)
+	return _position_data
 
 
 func _init() -> void:
@@ -81,6 +88,7 @@ func _init() -> void:
 
 
 func make_move(move: Move, in_search: bool = false) -> void:
+	_position_data = null
 	var start_square: int = move.start_square
 	var target_square: int = move.target_square
 	var move_flag: int = move.move_flag
@@ -189,6 +197,7 @@ func make_move(move: Move, in_search: bool = false) -> void:
 
 
 func unmake_move(move: Move, in_search: bool = false) -> void:
+	_position_data = null
 	is_white_to_move = not is_white_to_move
 
 	var undoing_white_move: bool = is_white_to_move
@@ -260,6 +269,7 @@ func unmake_move(move: Move, in_search: bool = false) -> void:
 
 
 func make_null_move() -> void:
+	_position_data = null
 	is_white_to_move = not is_white_to_move
 	ply_count += 1
 
@@ -276,6 +286,7 @@ func make_null_move() -> void:
 
 
 func unmake_null_move() -> void:
+	_position_data = null
 	is_white_to_move = not is_white_to_move
 	ply_count -= 1
 	game_state_history.pop_back()

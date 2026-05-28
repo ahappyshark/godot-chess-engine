@@ -64,6 +64,48 @@ func in_check() -> bool:
 	return _in_check
 
 
+func in_double_check() -> bool:
+	return _in_double_check
+
+
+static func compute_attack_map_for_color(board: Board, for_white: bool) -> int:
+	var color: int = Piece.WHITE if for_white else Piece.BLACK
+	var ci: int = Board.WHITE_INDEX if for_white else Board.BLACK_INDEX
+	var attack_map: int = 0
+	var blockers: int = board.all_pieces_bitboard
+
+	var ortho: int = (
+		board.piece_bitboards[Piece.make_piece(Piece.ROOK, color)]
+		| board.piece_bitboards[Piece.make_piece(Piece.QUEEN, color)]
+	)
+	while ortho != 0:
+		var lsb: Array = BitBoardUtility.pop_lsb(ortho)
+		ortho = lsb[0]
+		attack_map |= Magic.get_rook_attacks(lsb[1], blockers)
+
+	var diag: int = (
+		board.piece_bitboards[Piece.make_piece(Piece.BISHOP, color)]
+		| board.piece_bitboards[Piece.make_piece(Piece.QUEEN, color)]
+	)
+	while diag != 0:
+		var lsb: Array = BitBoardUtility.pop_lsb(diag)
+		diag = lsb[0]
+		attack_map |= Magic.get_bishop_attacks(lsb[1], blockers)
+
+	var knight_bb: int = board.piece_bitboards[Piece.make_piece(Piece.KNIGHT, color)]
+	while knight_bb != 0:
+		var lsb: Array = BitBoardUtility.pop_lsb(knight_bb)
+		knight_bb = lsb[0]
+		attack_map |= BitBoardUtility.knight_attacks[lsb[1]]
+
+	var pawn_bb: int = board.piece_bitboards[Piece.make_piece(Piece.PAWN, color)]
+	attack_map |= BitBoardUtility.pawn_attacks(pawn_bb, for_white)
+
+	attack_map |= BitBoardUtility.king_moves[board.king_square[ci]]
+
+	return attack_map
+
+
 func _setup() -> void:
 	curr_move_index = 0
 	_in_check = false

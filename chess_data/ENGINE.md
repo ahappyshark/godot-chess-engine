@@ -142,6 +142,32 @@ PROMOTE_TO_ROOK_FLAG  = 6
 PROMOTE_TO_BISHOP_FLAG= 7
 ```
 
+### `PositionData`
+
+A snapshot of all derived position information for the side to move. Computed once
+per position and cached on `Board` — use `board.get_position_data()` rather than
+constructing directly.
+
+```gdscript
+data.all_legal_moves: Array              # all legal moves for the side to move
+data.legal_moves_by_square: Dictionary  # square (int) -> Array[Move]
+data.opponent_attack_map: int           # bitboard of squares attacked by the opponent
+data.friendly_attack_map: int           # bitboard of squares attacked/defended by the mover
+data.pin_rays: int                      # bitboard of active pin rays
+data.in_check: bool
+data.in_double_check: bool
+data.hanging_pieces_friendly: int       # mover's pieces that are attacked and undefended (kings excluded)
+data.hanging_pieces_enemy: int          # opponent's pieces that are attacked and undefended (kings excluded)
+data.material_balance: int              # positive = white ahead, in centipawns (always white-relative)
+data.game_phase: int                    # PositionData.MIDDLEGAME or ENDGAME
+                                        # (OPENING wired up in item 4a — opening book lookup)
+```
+
+Phase constants: `PositionData.OPENING = 0`, `PositionData.MIDDLEGAME = 1`, `PositionData.ENDGAME = 2`.
+Endgame threshold: `total_piece_count_without_pawns_and_kings <= 6`.
+
+---
+
 ### `Board`
 
 The single source of truth for game state. Mutable — modified by
@@ -195,6 +221,9 @@ board.make_move(move, true)          # in_search=true → skips repetition histo
 board.unmake_move(move)              # must be called in reverse order
 board.unmake_move(move, true)
 board.is_in_check() -> bool
+
+# Cached position data (lazy, invalidated by make_move / unmake_move):
+board.get_position_data() -> PositionData
 ```
 
 **Important invariant**: every `make_move(m, true)` in a search branch
@@ -247,8 +276,12 @@ var moves: Array = gen.generate_moves(board)
 var captures: Array = gen.generate_moves(board, true)
 
 gen.in_check() -> bool            # valid after the last generate_moves call
+gen.in_double_check() -> bool     # valid after the last generate_moves call
 gen.opponent_attack_map: int      # bitboard of squares attacked by the opponent
 gen.opponent_pawn_attack_map: int
+
+# Raw attack map for one side (no legality filtering — used by PositionData.compute):
+MoveGenerator.compute_attack_map_for_color(board: Board, for_white: bool) -> int
 ```
 
 `promotions_to_generate` controls which under-promotions are emitted:

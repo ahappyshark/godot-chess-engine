@@ -128,8 +128,7 @@ func _begin_drag(global_pos: Vector2) -> void:
 	_drag_origin_sq = sq
 	_drag_offset = global_pos - piece.global_position
 
-	var all_moves := _gen.generate_moves(board)
-	_legal_moves = all_moves.filter(func(m): return m.start_square == sq)
+	_legal_moves = board.get_position_data().legal_moves_by_square.get(sq, [])
 
 	pieces.move_child(_dragging, -1)
 
@@ -182,10 +181,10 @@ func _handle_hover(global_pos: Vector2) -> void:
 
 	if Piece.is_color(code, player_color):
 		# Own piece: green for safe valid moves, orange for risky ones — no red noise.
-		var all_moves := _gen.generate_moves(board)
-		var piece_moves := all_moves.filter(func(m): return m.start_square == sq)
+		var pos_data := board.get_position_data()
+		var piece_moves: Array = pos_data.legal_moves_by_square.get(sq, [])
 		var move_sqs := piece_moves.map(func(m): return m.target_square)
-		var threat_sqs := _bb_to_squares(_gen.opponent_attack_map)
+		var threat_sqs := _bb_to_squares(pos_data.opponent_attack_map)
 		# Only pass threats that overlap with valid moves so orange fires but red doesn't.
 		var risky_sqs := threat_sqs.filter(func(s): return move_sqs.has(s))
 		highlights.show_moves(move_sqs)
@@ -197,8 +196,7 @@ func _handle_hover(global_pos: Vector2) -> void:
 
 # Public toggle for showing all squares the opponent currently threatens.
 func show_threatened_squares() -> void:
-	_gen.generate_moves(board)
-	highlights.show_threats(_bb_to_squares(_gen.opponent_attack_map))
+	highlights.show_threats(_bb_to_squares(board.get_position_data().opponent_attack_map))
 
 
 func hide_threatened_squares() -> void:
