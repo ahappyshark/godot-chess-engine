@@ -171,11 +171,13 @@ func evaluate_tactics(color_index: int) -> int:
 	score += fork_result.score
 	if fork_result.found: eval_data.detected_tactics.append("fork")
 
-	var pin_result = detect_pins(color_index)	
+	var pin_result = detect_pins(color_index)
 	score += pin_result.score
 	if pin_result.found: eval_data.detected_tactics.append("pin")
 
-	# etc.
+	var skewer_result = detect_skewers(color_index)
+	score += skewer_result.score
+	if skewer_result.found: eval_data.detected_tactics.append("skewer")
 
 	return score
 
@@ -236,8 +238,60 @@ func _fork_value(hit_mask: int, attacker_is_white: bool) -> int:
 
 func detect_pins(color_index: int) -> TacticResult:
 	var result = TacticResult.new()
+	var is_white: bool = color_index == Board.WHITE_INDEX
+	var enemy_index: int = 1 - color_index
+	var enemy_king_sq: int = board.king_square[enemy_index]
+	var enemy_color: int = Piece.BLACK if is_white else Piece.WHITE
+	var my_color: int = Piece.WHITE if is_white else Piece.BLACK
 
+	var my_rooks_bb:   int = board.piece_bitboards[Piece.make_piece(Piece.ROOK,   my_color)]
+	var my_bishops_bb: int = board.piece_bitboards[Piece.make_piece(Piece.BISHOP, my_color)]
+	var my_queens_bb:  int = board.piece_bitboards[Piece.make_piece(Piece.QUEEN,  my_color)]
 
+	var enemy_occ: int = 0
+	enemy_occ |= board.piece_bitboards[Piece.make_piece(Piece.PAWN,   enemy_color)]
+	enemy_occ |= board.piece_bitboards[Piece.make_piece(Piece.KNIGHT, enemy_color)]
+	enemy_occ |= board.piece_bitboards[Piece.make_piece(Piece.BISHOP, enemy_color)]
+	enemy_occ |= board.piece_bitboards[Piece.make_piece(Piece.ROOK,   enemy_color)]
+	enemy_occ |= board.piece_bitboards[Piece.make_piece(Piece.QUEEN,  enemy_color)]
+	enemy_occ |= board.piece_bitboards[Piece.make_piece(Piece.KING,   enemy_color)]
+
+	var my_occ: int = my_rooks_bb | my_bishops_bb | my_queens_bb
+	my_occ |= board.piece_bitboards[Piece.make_piece(Piece.PAWN,   my_color)]
+	my_occ |= board.piece_bitboards[Piece.make_piece(Piece.KNIGHT, my_color)]
+	my_occ |= board.piece_bitboards[Piece.make_piece(Piece.KING,   my_color)]
+
+	var all_occ: int = my_occ | enemy_occ
+
+	# Shoot rays from the enemy king in all 8 directions.
+	# direction_offsets: [N(+8), S(-8), W(-1), E(+1), NW(+7), SE(-7), NE(+9), SW(-9)]
+	# Directions 0-3 are orthogonal (rook), 4-7 are diagonal (bishop).
+	for dir_idx in 8:
+		var is_diagonal: bool = dir_idx >= 4
+		var n: int = PrecomputedMoveData.num_squares_to_edge[enemy_king_sq][dir_idx]
+		var dir_offset: int = PrecomputedMoveData.direction_offsets[dir_idx]
+		var first_piece_sq: int = -1
+		var first_is_enemy: bool = false  # "enemy" = belongs to the pinnable side
+
+		for step in n:
+			var sq: int = enemy_king_sq + dir_offset * (step + 1)
+			var bit: int = 1 << sq
+
+			if (all_occ & bit) != 0:
+				if first_piece_sq == -1:
+					first_piece_sq = sq
+					first_is_enemy = (enemy_occ & bit) != 0
+				else:
+					if first_is_enemy:
+						var is_our_slider: bool
+						if is_diagonal:
+							is_our_slider = ((my_bishops_bb | my_queens_bb) & bit) != 0
+						else:
+							is_our_slider = ((my_rooks_bb | my_queens_bb) & bit) != 0
+						if is_our_slider:
+							result.found = true
+							result.score += _pin_value(first_piece_sq, enemy_color)
+					break
 	return result
 
 func _pin_value(pinned_sq: int, pinned_color: int) -> int:
@@ -251,6 +305,116 @@ func _pin_value(pinned_sq: int, pinned_color: int) -> int:
 		Piece.PAWN: return 15
 	return 0
 
+func detect_skewers(color_index: int) -> TacticResult:
+	var result = TacticResult.new()
+	var is_white: bool = color_index == Board.WHITE_INDEX
+	var enemy_color: int = Piece.BLACK if is_white else Piece.WHITE
+	var my_color: int = Piece.WHITE if is_white else Piece.BLACK
+
+	var my_rooks_bb:   int = board.piece_bitboards[Piece.make_piece(Piece.ROOK,   my_color)]
+	var my_bishops_bb: int = board.piece_bitboards[Piece.make_piece(Piece.BISHOP, my_color)]
+	var my_queens_bb:  int = board.piece_bitboards[Piece.make_piece(Piece.QUEEN,  my_color)]
+
+	var enemy_occ: int = 0
+	enemy_occ |= board.piece_bitboards[Piece.make_piece(Piece.PAWN,   enemy_color)]
+	enemy_occ |= board.piece_bitboards[Piece.make_piece(Piece.KNIGHT, enemy_color)]
+	enemy_occ |= board.piece_bitboards[Piece.make_piece(Piece.BISHOP, enemy_color)]
+	enemy_occ |= board.piece_bitboards[Piece.make_piece(Piece.ROOK,   enemy_color)]
+	enemy_occ |= board.piece_bitboards[Piece.make_piece(Piece.QUEEN,  enemy_color)]
+	enemy_occ |= board.piece_bitboards[Piece.make_piece(Piece.KING,   enemy_color)]
+
+	var my_occ: int = my_rooks_bb | my_bishops_bb | my_queens_bb
+	my_occ |= board.piece_bitboards[Piece.make_piece(Piece.PAWN,   my_color)]
+	my_occ |= board.piece_bitboards[Piece.make_piece(Piece.KNIGHT, my_color)]
+	my_occ |= board.piece_bitboards[Piece.make_piece(Piece.KING,   my_color)]
+
+	var all_occ: int = my_occ | enemy_occ
+
+	# Only queen/rook/king are valuable enough that the opponent is forced to flee
+	# rather than accept the trade, so they are the only valid skewer targets.
+	var enemy_high_bb: int = 0
+	enemy_high_bb |= board.piece_bitboards[Piece.make_piece(Piece.QUEEN, enemy_color)]
+	enemy_high_bb |= board.piece_bitboards[Piece.make_piece(Piece.ROOK,  enemy_color)]
+	enemy_high_bb |= board.piece_bitboards[Piece.make_piece(Piece.KING,  enemy_color)]
+
+	# Shoot rays from each of our sliders.
+	# Skewer: [our slider] → [enemy high-value] → [enemy any piece]
+	# The high-value piece flees and we capture what was hiding behind it.
+	# Inverted from detect_pins: origin is our slider (not enemy king), first hit is
+	# the high-value target, and we score the *second* piece instead of the first.
+	for i in board.rooks[color_index].count():
+		var origin_sq: int = board.rooks[color_index].occupied_squares[i]
+		for dir_idx in 4:  # orthogonal only
+			var n: int = PrecomputedMoveData.num_squares_to_edge[origin_sq][dir_idx]
+			var dir_offset: int = PrecomputedMoveData.direction_offsets[dir_idx]
+			var first_piece_sq: int = -1
+			for step in n:
+				var sq: int = origin_sq + dir_offset * (step + 1)
+				var bit: int = 1 << sq
+				if (all_occ & bit) != 0:
+					if first_piece_sq == -1:
+						if (enemy_high_bb & bit) == 0:
+							break
+						first_piece_sq = sq
+					else:
+						if (enemy_occ & bit) != 0:
+							result.found = true
+							result.score += _skewer_value(sq, enemy_color)
+						break
+
+	for i in board.bishops[color_index].count():
+		var origin_sq: int = board.bishops[color_index].occupied_squares[i]
+		for dir_idx in range(4, 8):  # diagonal only
+			var n: int = PrecomputedMoveData.num_squares_to_edge[origin_sq][dir_idx]
+			var dir_offset: int = PrecomputedMoveData.direction_offsets[dir_idx]
+			var first_piece_sq: int = -1
+			for step in n:
+				var sq: int = origin_sq + dir_offset * (step + 1)
+				var bit: int = 1 << sq
+				if (all_occ & bit) != 0:
+					if first_piece_sq == -1:
+						if (enemy_high_bb & bit) == 0:
+							break
+						first_piece_sq = sq
+					else:
+						if (enemy_occ & bit) != 0:
+							result.found = true
+							result.score += _skewer_value(sq, enemy_color)
+						break
+
+	for i in board.queens[color_index].count():
+		var origin_sq: int = board.queens[color_index].occupied_squares[i]
+		for dir_idx in 8:
+			var n: int = PrecomputedMoveData.num_squares_to_edge[origin_sq][dir_idx]
+			var dir_offset: int = PrecomputedMoveData.direction_offsets[dir_idx]
+			var first_piece_sq: int = -1
+			for step in n:
+				var sq: int = origin_sq + dir_offset * (step + 1)
+				var bit: int = 1 << sq
+				if (all_occ & bit) != 0:
+					if first_piece_sq == -1:
+						if (enemy_high_bb & bit) == 0:
+							break
+						first_piece_sq = sq
+					else:
+						if (enemy_occ & bit) != 0:
+							result.found = true
+							result.score += _skewer_value(sq, enemy_color)
+						break
+
+	return result
+
+func _skewer_value(exposed_sq: int, _exposed_color: int) -> int:
+	# Score based on the piece exposed behind the skewered piece (what we capture).
+	# Inverted from _pin_value: we call this on the second piece, not the first.
+	var piece_on_sq: int = board.square[exposed_sq]
+	match Piece.piece_type(piece_on_sq):
+		Piece.QUEEN:  return 80
+		Piece.ROOK:   return 60
+		Piece.BISHOP: return 40
+		Piece.KNIGHT: return 40
+		Piece.PAWN:   return 15
+	return 0
 
 func get_material_info(color_index: int) -> MaterialInfo:
 	var num_pawns: int = board.pawns[color_index].count()
@@ -274,7 +438,7 @@ class EvaluationData:
 	var pawn_shield_score: int
 	var tactics_score: int
 	var pattern_score: int
-	var detected_tactics: int
+	var detected_tactics: Array[String] = []
 
 	func sum() -> int:
 		return material_score + mop_up_score + piece_square_score + pawn_score + pawn_shield_score + tactics_score + pattern_score
