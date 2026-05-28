@@ -10,6 +10,7 @@ const PERFT_DICT: Dictionary = {
 }
 
 var _tournament_thread: Thread = null
+var _tournament: Tournament = null
 
 func _ready() -> void:
 	# perft_divide_from_fen("rnbqkbnr/ppp1pppp/8/3p4/4P3/P7/1PPP1PPP/RNBQKBNR b KQkq - 0 2", 1)
@@ -132,10 +133,10 @@ static func perft_divide_from_fen(fen: String, depth: int) -> void:
 	print("Total: %d" % total)
 
 func _test_tournament() -> void:
-	var t = Tournament.new()
-	t.add_bot(RandomBot.new("RandomBot-A"))
-	t.add_bot(MinimaxBot.new())   # depth 2, ~ms per move
-	t.add_bot(SearcherBot.new())  # depth 4 with TT + move ordering, ~ms per move
-	t.add_bot(GreedyBot.new())
+	_tournament = Tournament.new()
+	_tournament.add_bot(RandomBot.new("RandomBot-A"))
+	_tournament.add_bot(MinimaxBot.new())   # depth 2, ~ms per move
+	_tournament.add_bot(SearcherBot.new())  # depth 4 with TT + move ordering, ~ms per move
+	_tournament.add_bot(GreedyBot.new())
 	_tournament_thread = Thread.new()
-	_tournament_thread.start(t.run_round_robin.bind(10))
+	_tournament_thread.start(_tournament.run_round_robin.bind(10))
