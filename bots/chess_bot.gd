@@ -2,6 +2,7 @@ class_name ChessBot
 
 var name: String = "BaseBot"
 var board: Board
+var eval_weights: EvalWeights = EvalWeights.new()
 
 func set_board(p_board: Board) -> void:
 	board = p_board
@@ -14,3 +15,4 @@ func get_move() -> Move:
 # Optional — called when opponent moves, lets bots track state
 func on_opponent_move(_move: Move) -> void:
 	pass
+

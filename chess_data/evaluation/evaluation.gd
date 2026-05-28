@@ -16,7 +16,7 @@ var board: Board
 var white_eval: EvaluationData
 var black_eval: EvaluationData
 
-func evaluate(p_board: Board) -> int:
+func evaluate(p_board: Board, eval_weights: EvalWeights) -> int:
 	board = p_board
 	var perspective: int = 1 if board.is_white_to_move else -1
 
@@ -43,7 +43,7 @@ func evaluate(p_board: Board) -> int:
 	white_eval.tactics_score = evaluate_tactics(Board.WHITE_INDEX)
 	black_eval.tactics_score = evaluate_tactics(Board.BLACK_INDEX)
 	
-	return (white_eval.sum() - black_eval.sum()) * perspective
+	return (white_eval.sum(eval_weights) - black_eval.sum(EvalWeights.new())) * perspective
 
 func check_mate_patterns() -> int:
 	return 0
@@ -440,8 +440,16 @@ class EvaluationData:
 	var pattern_score: int
 	var detected_tactics: Array[String] = []
 
-	func sum() -> int:
-		return material_score + mop_up_score + piece_square_score + pawn_score + pawn_shield_score + tactics_score + pattern_score
+	func sum(w: EvalWeights) -> int:
+		return int(
+			material_score * w.material + 
+			mop_up_score * w.mop_up + 
+			piece_square_score * w.piece_square + 
+			pawn_score * w.pawn_structure + 
+			pawn_shield_score * w.pawn_shield + 
+			tactics_score * w.tactics + 
+			pattern_score * w.patterns
+		)
 
 
 class MaterialInfo:

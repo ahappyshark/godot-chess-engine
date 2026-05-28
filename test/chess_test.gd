@@ -126,4 +126,5 @@ static func _test_tournament() -> void:
 	t.add_bot(RandomBot.new("RandomBot-A"))
 	t.add_bot(MinimaxBot.new())   # depth 2, ~ms per move
 	t.add_bot(SearcherBot.new())  # depth 4 with TT + move ordering, ~ms per move
+	t.add_bot(GreedyBot.new())
 	t.run_round_robin(10)

@@ -1,14 +1,15 @@
-class_name SearcherBot
+class_name GreedyBot
 extends ChessBot
 
-# Iterative deepening target depth. The Searcher uses move ordering + TT + quiescence,
-# so depth 4 here is far stronger and faster than MinimaxBot at depth 3.
-const SEARCH_DEPTH: int = 4
+const SEARCH_DEPTH: int = 3
 
 var _searcher: Searcher
 
-func _init(bot_name: String = "SearcherBot") -> void:
+func _init(bot_name: String = "GreedyBot") -> void:
 	name = bot_name
+	eval_weights.material = 2.5
+	eval_weights.tactics = 0.3
+	eval_weights.pawn_shield = 0.1
 
 func set_board(p_board: Board) -> void:
 	super.set_board(p_board)

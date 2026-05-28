@@ -35,11 +35,12 @@ var move_generator: MoveGenerator
 var move_orderer: MoveOrdering
 var evaluation: Evaluation
 var board: Board
+var eval_weights: EvalWeights
 
 
-func _init(board: Board) -> void:
+func _init(board: Board, eval_weights: EvalWeights) -> void:	
 	self.board = board
-
+	self.eval_weights = eval_weights
 	evaluation = Evaluation.new()
 	move_generator = MoveGenerator.new()
 	transposition_table = TranspositionTable.new(board, TRANSPOSITION_TABLE_SIZE_MB)
@@ -230,7 +231,7 @@ func quiescence_search(alpha: int, beta: int) -> int:
 	if search_cancelled:
 		return 0
 
-	var eval: int = evaluation.evaluate(board)
+	var eval: int = evaluation.evaluate(board, eval_weights)
 	search_diagnostics.num_positions_evaluated += 1
 	if eval >= beta:
 		search_diagnostics.num_cut_offs += 1

@@ -11,6 +11,7 @@ func _init(bot_name: String = "MinimaxBot") -> void:
 	name = bot_name
 	_gen = MoveGenerator.new()
 	_eval = Evaluation.new()
+	eval_weights = EvalWeights.new()
 
 func get_move() -> Move:
 	var moves: Array = _gen.generate_moves(board)
@@ -71,6 +72,6 @@ func minimax(depth: int, alpha: int, beta: int, is_maximizing: bool) -> int:
 
 # Returns white's absolute advantage (positive = white winning)
 func _absolute_evaluate() -> int:
-	var score: int = _eval.evaluate(board)
+	var score: int = _eval.evaluate(board, eval_weights)
 	# evaluate() returns perspective-relative; un-flip to get absolute
 	return score if board.is_white_to_move else -score
