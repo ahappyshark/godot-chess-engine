@@ -18,6 +18,14 @@ var black_eval: EvaluationData
 
 func evaluate(p_board: Board) -> int:
 	board = p_board
+	var perspective: int = 1 if board.is_white_to_move else -1
+
+	# Check for forced mate patterns FIRST
+	var mate_score = check_mate_patterns()
+	if mate_score != 0:
+		return mate_score * perspective
+
+	# General eval data
 	white_eval = EvaluationData.new()
 	black_eval = EvaluationData.new()
 	var white_material = get_material_info(Board.WHITE_INDEX)
@@ -31,10 +39,14 @@ func evaluate(p_board: Board) -> int:
 	white_eval.mop_up_score = mop_up_eval(true, white_material, black_material)
 	black_eval.mop_up_score = mop_up_eval(false, black_material, white_material)
 	white_eval.pawn_shield_score = king_pawn_shield(Board.WHITE_INDEX, black_material, black_eval.piece_square_score)
-	black_eval.pawn_shield_score = king_pawn_shield(Board.BLACK_INDEX, white_material, white_eval.piece_square_score)	
-	var perspective: int = 1 if board.is_white_to_move else -1
+	black_eval.pawn_shield_score = king_pawn_shield(Board.BLACK_INDEX, white_material, white_eval.piece_square_score)
+	white_eval.tactics_score = evaluate_tactics(Board.WHITE_INDEX)
+	black_eval.tactics_score = evaluate_tactics(Board.BLACK_INDEX)
+	
 	return (white_eval.sum() - black_eval.sum()) * perspective
 
+func check_mate_patterns() -> int:
+	return 0
 
 func king_pawn_shield(color_index: int, enemy_material: MaterialInfo, _enemy_piece_square_score: float) -> int:
 	if enemy_material.end_game_t >= 1:
@@ -67,7 +79,7 @@ func king_pawn_shield(color_index: int, enemy_material: MaterialInfo, _enemy_pie
 	if enemy_material.num_rooks > 1 || (enemy_material.num_rooks > 0 && enemy_material.num_queens > 0):
 		var clamped_king_file: int = clamp(king_file, 1, 6)
 		var my_pawns: int = enemy_material.enemy_pawns
-		for attack_file in range(clamped_king_file, clamped_king_file + 1):
+		for attack_file in range(clamped_king_file - 1, clamped_king_file + 2):
 			var file_mask: int = Bits.file_mask[attack_file]
 			var is_king_file: bool = attack_file == king_file
 			if (enemy_material.pawns & file_mask) == 0:
@@ -150,6 +162,73 @@ static func evaluate_piece_square_table(table: Array[int], piece_list: PieceList
 		value += PieceSquareTable.read(table, piece_list.occupied_squares[i], is_white)
 	return value
 
+func evaluate_tactics(color_index: int) -> int:
+	var score: int = 0
+	var eval_data = white_eval if color_index == Board.WHITE_INDEX else black_eval
+	
+	# Each detector returns a bonus + optionally pushes a tag
+	var fork_result = detect_forks(color_index)
+	score += fork_result.score
+	if fork_result.found: eval_data.detected_tactics.append("fork")
+
+	var pin_result = detect_pins(color_index)	
+	score += pin_result.score
+	if pin_result.found: eval_data.detected_tactics.append("pin")
+
+	# etc.
+
+	return score
+
+func detect_forks(color_index: int) -> TacticResult:
+	var result = TacticResult.new()
+
+
+	return result
+
+func _fork_value(hit_mask: int, attacker_is_white: bool) -> int:
+	# Sum the two lowest-value pieces being hit (you can only take one)
+	# so the fork wins you the lesser of the two threatened pieces
+	var enemy_color = Piece.BLACK if attacker_is_white else Piece.WHITE
+	var values: Array[int] = []
+
+	var piece_types = [
+		[Piece.PAWN, Evaluation.PAWN_VALUE],
+		[Piece.KNIGHT, Evaluation.KNIGHT_VALUE],
+		[Piece.BISHOP, Evaluation.BISHOP_VALUE],
+		[Piece.ROOK, Evaluation.ROOK_VALUE],
+		[Piece.QUEEN, Evaluation.QUEEN_VALUE],
+		[Piece.KING, 10000]
+	]
+
+	for entry in piece_types:
+		var bb: int = board.piece_bitboards[Piece.make_piece(entry[0], enemy_color)]
+		if (bb & hit_mask) != 0:
+			values.append(entry[1])
+	
+	if values.size() < 2:
+		return 0
+	values.sort()
+	# The fork wins you the smaller piece (opponent saves the bigger one)
+	return values[0]
+
+func detect_pins(color_index: int) -> TacticResult:
+	var result = TacticResult.new()
+
+
+	return result
+
+func _pin_value(pinned_sq: int, pinned_color: int) -> int:
+	#What piece is actually pinned? Higher value = more useful pin
+	var piece_on_sq: int = board.square[pinned_sq]
+	match Piece.piece_type(piece_on_sq):
+		Piece.QUEEN: return 80
+		Piece.ROOK: return 60
+		Piece.BISHOP: return 40
+		Piece.KNIGHT: return 40
+		Piece.PAWN: return 15
+	return 0
+
+
 func get_material_info(color_index: int) -> MaterialInfo:
 	var num_pawns: int = board.pawns[color_index].count()
 	var num_knights: int = board.knights[color_index].count()
@@ -170,9 +249,12 @@ class EvaluationData:
 	var piece_square_score: int
 	var pawn_score: int
 	var pawn_shield_score: int
+	var tactics_score: int
+	var pattern_score: int
+	var detected_tactics: int
 
 	func sum() -> int:
-		return material_score + mop_up_score + piece_square_score + pawn_score + pawn_shield_score
+		return material_score + mop_up_score + piece_square_score + pawn_score + pawn_shield_score + tactics_score + pattern_score
 
 
 class MaterialInfo:
@@ -220,3 +302,7 @@ class MaterialInfo:
 		const ENDGAME_START_WEIGHT: int = 2 * ROOK_ENDGAME_WEIGHT + 2 * BISHOP_ENDGAME_WEIGHT + 2 * KNIGHT_ENDGAME_WEIGHT + QUEEN_ENDGAME_WEIGHT
 		var endgame_weight_sum: int = num_queens * QUEEN_ENDGAME_WEIGHT + num_rooks * ROOK_ENDGAME_WEIGHT + num_bishops * BISHOP_ENDGAME_WEIGHT + p_num_knights * KNIGHT_ENDGAME_WEIGHT
 		end_game_t = 1 - min(1, endgame_weight_sum / float(ENDGAME_START_WEIGHT))
+
+class TacticResult:
+	var found: bool = false
+	var score: int = 0
