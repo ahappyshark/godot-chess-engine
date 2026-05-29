@@ -43,7 +43,7 @@ func evaluate(p_board: Board, eval_weights: EvalWeights) -> int:
 	white_eval.tactics_score = evaluate_tactics(Board.WHITE_INDEX)
 	black_eval.tactics_score = evaluate_tactics(Board.BLACK_INDEX)
 	
-	return (white_eval.sum(eval_weights) - black_eval.sum(EvalWeights.new())) * perspective
+	return (white_eval.sum(eval_weights) - black_eval.sum(eval_weights)) * perspective
 
 func check_mate_patterns() -> int:
 	return 0
