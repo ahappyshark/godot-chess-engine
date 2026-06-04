@@ -1,89 +1,63 @@
 # Chess Engine — Developer Reference
 
-A GDScript chess engine for Godot 4. This document covers architecture,
-file layout, data representations, and the public API surfaces that outside
-code (UI, bots, tests) should connect through.
+A self-contained GDScript chess engine. This document covers the internals of
+`chess_data/` only: architecture, data representations, and the public API
+surfaces that external code connects through. For project-level integration
+(autoloads, bot wiring, UI, tests) see `INTEGRATION.md` in the project root.
 
 ---
 
-## Project layout
+## chess_data/ layout
 
 ```
 chess_data/
-  chess_engine.gd          # Autoload — initialises all subsystems (add to project.godot)
-  book.txt                 # A list of tons of book openings, do not read this file ever.
+  chess_engine.gd               # Initialises all subsystems — must be an autoload
+  book.txt                      # Opening book lines (do not read this file)
   core/
-    board.gd               # Central mutable game state
-    piece.gd               # Piece type/colour constants and helpers
-    piece_list.gd          # Fast square-lookup list used by Board
-    move.gd                # Packed move value object
-    game_state.gd          # Immutable snapshot pushed onto Board's history stack
-    coord.gd               # (file, rank) coordinate helper
-    zobrist.gd             # Zobrist hashing tables (static init)
-    
+    board.gd                    # Central mutable game state
+    piece.gd                    # Piece type/colour constants and helpers
+    piece_list.gd               # Fast square-lookup list used by Board
+    move.gd                     # Packed move value object
+    game_state.gd               # Immutable snapshot pushed onto Board's history stack
+    coord.gd                    # (file, rank) coordinate helper
+    zobrist.gd                  # Zobrist hashing tables (static init)
   move_generation/
-    move_generator.gd      # Pseudo-legal + legal move generator
-    precomputed_move_data.gd  # Direction rays, alignment masks (static init)
+    move_generator.gd           # Pseudo-legal + legal move generator
+    precomputed_move_data.gd    # Direction rays, alignment masks (static init)
     bitboards/
-      bit_board_utility.gd # Bitboard ops, attack tables (needs initialize() call)
-      bits.gd              # Named castle/rank/file masks (needs initialize() call)
+      bit_board_utility.gd      # Bitboard ops, attack tables (needs initialize() call)
+      bits.gd                   # Named castle/rank/file masks (needs initialize() call)
     magics/
-      magic.gd             # Magic-bitboard slider attack lookup (autoload)
-      magic_helper.gd      # Internal helper
-      precomputed_magics.gd # Precomputed magic numbers
+      magic.gd                  # Magic-bitboard slider attack lookup (autoload)
+      magic_helper.gd           # Internal helper
+      precomputed_magics.gd     # Precomputed magic numbers
   search/
-    searcher.gd            # Iterative-deepening alpha-beta + quiescence search
-    move_ordering.gd       # MVV-LVA, killer moves, history heuristic
-    transposition_table.gd # Zobrist-keyed TT (64 MB default)
-    repetition_table.gd    # Threefold-repetition tracker used during search
+    searcher.gd                 # Iterative-deepening alpha-beta + quiescence search
+    move_ordering.gd            # MVV-LVA, killer moves, history heuristic
+    transposition_table.gd      # Zobrist-keyed TT (64 MB default)
+    repetition_table.gd         # Threefold-repetition tracker used during search
   evaluation/
-    evaluation.gd          # Static evaluator (material + PST + endgame)
-    piece_square_table.gd  # Piece-square tables (static init)
+    evaluation.gd               # Static evaluator (material + PST + tactics + endgame)
+    eval_weights.gd             # Per-component weight multipliers
+    piece_square_table.gd       # Piece-square tables (static init)
     precomputed_evaluation_data.gd  # Passed-pawn masks etc. (static init)
-  utilities/
-    fen_utility.gd         # FEN parse / generate
-    board_helper.gd        # Square index helpers, named square constants
-    move_utility.gd        # Move → UCI / SAN string
-    pgn_creator.gd         # PGN export
-    generate_magics.gd     # One-shot script used to regenerate magic numbers
   game_result/
-    arbiter.gd             # Terminal-state detection (checkmate, draw rules)
-
-bots/
-  chess_bot.gd             # Abstract base — extend to make a new bot
-  searcher_bot.gd          # SearcherBot: iterative deepening to fixed depth
-  minimax_bot.gd           # MinimaxBot: plain negamax without TT/ordering
-  random_bot.gd            # RandomBot: picks a random legal move
-
-scenes/
-  chess_board.gd           # Visual board + player input (Node2D scene)
-  chess_match.gd           # Game controller (manages the chess match and associated game state)
-  chess_piece.gd           # Single piece sprite
-  board_highlights.gd      # Square highlight overlay
-
-test/
-  chess_test.gd            # Perft tests, make/unmake round-trip, tournament
-  headless_game.gd         # Runs a full game without UI
-  tournament.gd            # Pits two bots against each other N times
-utilities/
-  rng_service.gd           # Deterministic RNG used by Zobrist and other things
-  game_events.gd           # Autoload single point of reference for all signals connected and emitted
+    arbiter.gd                  # Terminal-state detection (checkmate, draw rules)
+  utilities/
+    fen_utility.gd              # FEN parse / generate
+    board_helper.gd             # Square index helpers, named square constants
+    move_utility.gd             # Move → UCI / SAN string
+    pgn_creator.gd              # PGN export
+    generate_magics.gd          # One-shot script used to regenerate magic numbers
 ```
 
 ---
 
 ## Initialisation order
 
-Four autoloads are required in `project.godot`:
+`chess_engine.gd` must be registered as a Godot autoload **after** `magic.gd`.
+Its `_ready()` calls:
 
-| Order | Name          | Script                              |
-|-------|---------------|-------------------------------------|
-| 3     | `RngService`  | `utilities/rng_service.gd` |
-| 3     | `GameEvents`  | `utilities/game_events.gd` |
-| 3     | `Magic`       | `chess_data/move_generation/magics/magic.gd` |
-| 4     | `ChessEngine` | `chess_data/chess_engine.gd`         |
-
-`ChessEngine._ready()` calls:
 1. `BitBoardUtility.initialize()` — builds king/knight/pawn attack tables.
 2. `Bits.initialize()` — builds castle and safety masks (depends on BitBoardUtility).
 
@@ -132,14 +106,14 @@ move.promotion_piece_type       # Piece.QUEEN / KNIGHT / ROOK / BISHOP
 Flag constants (on `Move`):
 
 ```
-NO_FLAG               = 0
-EN_PASSANT_CAPTURE_FLAG = 1
-CASTLE_FLAG           = 2
-PAWN_TWO_UP_FLAG      = 3
-PROMOTE_TO_QUEEN_FLAG = 4
-PROMOTE_TO_KNIGHT_FLAG= 5
-PROMOTE_TO_ROOK_FLAG  = 6
-PROMOTE_TO_BISHOP_FLAG= 7
+NO_FLAG                = 0
+EN_PASSANT_CAPTURE_FLAG= 1
+CASTLE_FLAG            = 2
+PAWN_TWO_UP_FLAG       = 3
+PROMOTE_TO_QUEEN_FLAG  = 4
+PROMOTE_TO_KNIGHT_FLAG = 5
+PROMOTE_TO_ROOK_FLAG   = 6
+PROMOTE_TO_BISHOP_FLAG = 7
 ```
 
 ### `PositionData`
@@ -160,7 +134,6 @@ data.hanging_pieces_friendly: int       # mover's pieces that are attacked and u
 data.hanging_pieces_enemy: int          # opponent's pieces that are attacked and undefended (kings excluded)
 data.material_balance: int              # positive = white ahead, in centipawns (always white-relative)
 data.game_phase: int                    # PositionData.MIDDLEGAME or ENDGAME
-                                        # (OPENING wired up in item 4a — opening book lookup)
 ```
 
 Phase constants: `PositionData.OPENING = 0`, `PositionData.MIDDLEGAME = 1`, `PositionData.ENDGAME = 2`.
@@ -229,9 +202,8 @@ board.get_position_data() -> PositionData
 **Important invariant**: every `make_move(m, true)` in a search branch
 **must** be paired with exactly one `unmake_move(m, true)` before the
 function returns. Do not share a `Board` object between threads while
-either thread is calling `make_move`/`unmake_move` — modify only the
-board the search owns, or use `Board.create_board_from_source` to get a
-private copy.
+either thread is calling `make_move`/`unmake_move` — use
+`Board.create_board_from_source` to give each thread a private copy.
 
 ### `GameState`
 
@@ -296,67 +268,128 @@ gen.promotions_to_generate = MoveGenerator.PromotionMode.QUEEN_AND_KNIGHT  # def
 
 ## Search
 
-### `Searcher`
-
-Alpha-beta with iterative deepening, quiescence search, TT, LMR,
-move ordering, and check/pawn-push extensions.
+Alpha-beta with iterative deepening, quiescence search, transposition table,
+late-move reduction, move ordering (MVV-LVA + killers + history heuristic),
+and check/pawn-push extensions.
 
 ```gdscript
-var searcher := Searcher.new(board)   # board is the shared game board
+var searcher := Searcher.new(board, eval_weights)  # eval_weights set bot personality
 
-# Run a full iterative-deepening search (async-safe via on_search_complete signal):
-searcher.start_search()
-# signal: searcher.on_search_complete(move: Move)
-
-# Or call search() directly for a synchronous fixed-depth result:
-searcher.search(depth, 0, Searcher.NEGATIVE_INFINITY, Searcher.POSITIVE_INFINITY)
-var best: Move = searcher.best_move_this_iteration
+# Run iterative-deepening search to a fixed depth:
+for depth in range(1, max_depth + 1):
+    searcher.best_move_this_iteration = Move.NULL_MOVE
+    searcher.search(depth, 0, Searcher.NEGATIVE_INFINITY, Searcher.POSITIVE_INFINITY)
+    if not searcher.best_move_this_iteration.is_null:
+        best_move = searcher.best_move_this_iteration
 
 searcher.end_search()              # sets search_cancelled = true
 searcher.clear_for_new_position()  # clears TT and killer moves between games
 
 # Diagnostics
-searcher.search_diagnostics        # SearchDiagnostics inner class
+searcher.search_diagnostics        # SearchDiagnostics inner class instance
 searcher.best_move_so_far          # best move from last completed iteration
 searcher.best_eval_so_far          # eval in centipawns (positive = good for side to move)
 searcher.current_depth             # last fully-completed depth
 ```
 
-### `SearcherBot` (recommended bot)
-
-Wraps `Searcher` with a fixed iterative-deepening depth (default 4).
-Use this as the reference bot implementation.
+`SearchDiagnostics` fields:
 
 ```gdscript
-var bot := SearcherBot.new()
-bot.set_board(board)
-var move: Move = bot.get_move()   # blocks until search is complete
+diagnostics.num_completed_iterations: int
+diagnostics.num_positions_evaluated: int
+diagnostics.num_cut_offs: int
+diagnostics.move_val: String
+diagnostics.eval: int
+diagnostics.num_q_checks: int
+diagnostics.num_q_mates: int
+```
+
+Mate score helpers:
+
+```gdscript
+Searcher.is_mate_score(score: int) -> bool
+Searcher.num_ply_to_mate_from_score(score: int) -> int
+Searcher.IMMEDIATE_MATE_SCORE  # 100000
 ```
 
 ---
 
-## Bot interface
+## Evaluation
 
-All bots extend `ChessBot`:
-
-```gdscript
-class_name MyBot
-extends ChessBot
-
-func get_move() -> Move:
-    # inspect self.board, return a legal Move
-    ...
-
-func on_opponent_move(move: Move) -> void:
-    pass   # optional hook
-```
-
-Register with the match:
+Evaluation is a two-phase process: compute raw components once (no weights),
+then apply personality weights separately. This means the same component data
+can be read by multiple consumers with different weightings without re-running
+the expensive computation.
 
 ```gdscript
-var bot := MyBot.new()
-bot.set_board(chess_board.board)
+var evaluation := Evaluation.new()
+
+# Phase 1 — objective: compute all component scores for the current position.
+# Results stored in evaluation.white_eval and evaluation.black_eval.
+evaluation.compute(board)
+
+# Phase 2a — personality: score from side-to-move's perspective (positive = good for mover).
+var weights := EvalWeights.new()   # set fields for bot personality
+var score: int = evaluation.weighted_score(weights)
+
+# Phase 2b — objective display: score always from white's perspective (positive = white ahead).
+var white_pov: int = evaluation.white_relative_score(EvalWeights.new())
 ```
+
+### `EvalWeights`
+
+Multipliers applied to each evaluation component. Default all 1.0.
+
+```gdscript
+weights.material: float       # raw piece values
+weights.piece_square: float   # piece-square table bonuses
+weights.pawn_structure: float # passed-pawn bonus + isolated-pawn penalty
+weights.pawn_shield: float    # king safety score
+weights.mop_up: float         # king activity bonus in winning endgames
+weights.tactics: float        # fork / pin / skewer bonuses
+weights.patterns: float       # reserved for future pattern-based bonuses
+```
+
+Setting a weight to 0.0 disables that component entirely; values above 1.0
+amplify it. Bots use this to express playing styles (e.g. `tactics = 3.0` for
+an aggressive tactical bot).
+
+### Evaluation components
+
+| Component | Description |
+|---|---|
+| **Material** | Sum of piece values: P=100, N=300, B=320, R=500, Q=900 |
+| **Piece-square tables** | Position bonuses per piece; opening/endgame tables blended by phase |
+| **Pawn structure** | Passed-pawn bonus (scales with rank); isolated-pawn penalty |
+| **King pawn shield** | Penalty for missing pawns in front of a castled king; scales down as queens leave |
+| **Mop-up** | King activity and centralisation bonus when winning in an endgame |
+| **Tactics** | Fork + pin + skewer detection bonuses (see below) |
+
+### Tactical evaluation
+
+`evaluate_tactics(color_index)` runs three detectors and accumulates their scores:
+
+**Forks** — knight attacks two or more enemy pieces simultaneously. Bonus
+= value of the lesser-valued piece being forked (the opponent saves the bigger
+one). Scales with quality of the forked targets; king forks are included.
+
+**Pins** — ray traced from the enemy king outward; a friendly slider (bishop/rook/queen)
+is behind an enemy piece along the same ray. Bonus by pinned piece type:
+Q=80, R=60, B/N=40, P=15 centipawns.
+
+**Skewers** — ray traced from each friendly slider; an enemy high-value piece
+(queen/rook/king) is the first hit and a second enemy piece hides behind it.
+Bonus is the value of the exposed (second) piece, same table as pin values.
+
+Detected tactic names ("fork", "pin", "skewer") are appended to
+`EvaluationData.detected_tactics` for debugging.
+
+### Endgame phase
+
+Phase is determined by `total_piece_count_without_pawns_and_kings`.
+Threshold ≤ 6 pieces → endgame (`end_game_t = 1.0`). Between 0 and the
+threshold the blend factor interpolates linearly. Mop-up evaluation and
+king-safety scaling both use this factor.
 
 ---
 
@@ -373,8 +406,8 @@ Arbiter.GameResult enum values:
   WHITE_TIMEOUT, BLACK_TIMEOUT,
   WHITE_ILLEGAL_MOVE, BLACK_ILLEGAL_MOVE
 
-Arbiter.is_draw_result(result)   -> bool
-Arbiter.is_win_result(result)    -> bool
+Arbiter.is_draw_result(result)       -> bool
+Arbiter.is_win_result(result)        -> bool
 Arbiter.is_white_wins_result(result) -> bool
 Arbiter.is_black_wins_result(result) -> bool
 ```
@@ -384,7 +417,7 @@ Arbiter.is_black_wins_result(result) -> bool
 ## FEN utilities
 
 ```gdscript
-FenUtility.START_POSITION_FEN           # standard starting FEN string
+FenUtility.START_POSITION_FEN            # standard starting FEN string
 FenUtility.position_from_fen(fen) -> FenUtility.PositionInfo
 FenUtility.current_fen(board) -> String
 ```
@@ -416,33 +449,32 @@ BoardHelper.light_square(sq) -> bool
 
 ---
 
-## Testing
+## Perft reference values
 
-```gdscript
-# Perft (node count) from standard start:
-ChessTest.run_tests()
+Used to verify move generation correctness from the standard starting position:
 
-# Known perft values:
-# depth 1 → 20
-# depth 2 → 400
-# depth 3 → 8902
-# depth 4 → 197281
-# depth 5 → 4865609
 ```
-
-A Python helper script `compare_perft.py` in the project root can
-cross-check perft counts against a reference engine.
+depth 1 →       20
+depth 2 →      400
+depth 3 →    8,902
+depth 4 →  197,281
+depth 5 → 4,865,609
+```
 
 ---
 
-## Evaluation notes
+## Integration seam summary
 
-`Evaluation.evaluate(board)` returns a score in centipawns from the
-perspective of the **side to move** (positive = good for mover).
+External code (bots, UI, tests) connects to the engine through these entry points:
 
-It combines:
-- Material balance
-- Piece-square table bonuses (separate middlegame / endgame tables,
-  interpolated by a `total_piece_count_without_pawns_and_kings` phase
-  factor stored on the board)
-- Mop-up evaluation in the endgame (king proximity bonus when up material)
+| What | How |
+|---|---|
+| Start a position | `Board.create_board()` or `Board.create_board(fen)` |
+| Generate moves | `MoveGenerator.new().generate_moves(board)` |
+| Apply / undo a move | `board.make_move(move)` / `board.unmake_move(move)` |
+| Run a search | `Searcher.new(board)`, then call `search(depth, ...)` |
+| Evaluate a position | `Evaluation.new().evaluate(board, EvalWeights.new())` |
+| Check game end | `Arbiter.get_game_state(board)` |
+| Threading contract | Search owns the board — never read/write the board from another thread while search is running. Use `Board.create_board_from_source` for a safe copy. |
+
+See `INTEGRATION.md` for the full project wiring (autoloads, bot base class, match controller).

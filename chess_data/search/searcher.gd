@@ -24,10 +24,6 @@ var has_searched_at_least_one_move: bool
 var search_cancelled: bool
 
 var search_diagnostics: SearchDiagnostics
-var current_iteration_depth: int
-var search_iteration_timer: float
-var search_total_timer: float
-var debug_info: String
 
 var transposition_table: TranspositionTable
 var repetition_table: RepetitionTable
@@ -48,72 +44,6 @@ func _init(board: Board, eval_weights: EvalWeights) -> void:
 	repetition_table = RepetitionTable.new()
 
 	move_generator.promotions_to_generate = MoveGenerator.PromotionMode.QUEEN_AND_KNIGHT
-
-
-func start_search() -> void:
-	best_eval_this_iteration = 0
-	best_eval = 0
-	best_move_this_iteration = Move.NULL_MOVE
-	best_move = Move.NULL_MOVE
-
-	is_playing_white = board.is_white_to_move
-
-	move_orderer.clear_history()
-	repetition_table.init(board)
-
-	current_depth = 0
-	debug_info = "Starting search with FEN " + FenUtility.current_fen(board)
-	search_cancelled = false
-	search_diagnostics = SearchDiagnostics.new()
-	search_iteration_timer = 0.0
-	search_total_timer = Time.get_ticks_msec() / 1000.0
-
-	_run_iterative_deepening_search()
-
-	if best_move.is_null:
-		best_move = move_generator.generate_moves(board)[0]
-	GameEvents.on_search_complete.emit(best_move)
-	search_cancelled = false
-
-
-func _run_iterative_deepening_search() -> void:
-	for search_depth in range(1, 257):
-		has_searched_at_least_one_move = false
-		debug_info += "\nStarting Iteration: " + str(search_depth)
-		search_iteration_timer = Time.get_ticks_msec() / 1000.0
-		current_iteration_depth = search_depth
-		search(search_depth, 0, NEGATIVE_INFINITY, POSITIVE_INFINITY)
-
-		if search_cancelled:
-			if has_searched_at_least_one_move:
-				best_move = best_move_this_iteration
-				best_eval = best_eval_this_iteration
-				search_diagnostics.move = MoveUtility.get_move_name_uci(best_move)
-				search_diagnostics.eval = best_eval
-				search_diagnostics.move_is_from_partial_search = true
-				debug_info += "\nUsing partial search result: " + MoveUtility.get_move_name_uci(best_move) + " Eval: " + str(best_eval)
-
-			debug_info += "\nSearch aborted"
-			break
-		else:
-			current_depth = search_depth
-			best_move = best_move_this_iteration
-			best_eval = best_eval_this_iteration
-
-			debug_info += "\nIteration result: " + MoveUtility.get_move_name_uci(best_move) + " Eval: " + str(best_eval)
-			if is_mate_score(best_eval):
-				debug_info += " Mate in ply: " + str(num_ply_to_mate_from_score(best_eval))
-
-			best_eval_this_iteration = -9223372036854775808
-			best_move_this_iteration = Move.NULL_MOVE
-
-			search_diagnostics.num_completed_iterations = search_depth
-			search_diagnostics.move = MoveUtility.get_move_name_uci(best_move)
-			search_diagnostics.eval = best_eval
-
-			if is_mate_score(best_eval) and num_ply_to_mate_from_score(best_eval) <= search_depth:
-				debug_info += "\nExitting search due to mate found within search depth"
-				break
 
 
 func get_search_result() -> Dictionary:
@@ -231,7 +161,11 @@ func quiescence_search(alpha: int, beta: int) -> int:
 	if search_cancelled:
 		return 0
 
-	var eval: int = evaluation.evaluate(board, eval_weights)
+	var eval_t0: int = Time.get_ticks_usec()
+	evaluation.compute(board)
+	var eval: int = evaluation.weighted_score(eval_weights)
+	search_diagnostics.eval_time_usec += Time.get_ticks_usec() - eval_t0
+	search_diagnostics.eval_call_count += 1
 	search_diagnostics.num_positions_evaluated += 1
 	if eval >= beta:
 		search_diagnostics.num_cut_offs += 1
@@ -293,9 +227,11 @@ class SearchDiagnostics:
 	var move_val: String
 	var move: String
 	var eval: int
-	var move_is_from_partial_search: bool
 	var num_q_checks: int
 	var num_q_mates: int
+
+	var eval_call_count: int
+	var eval_time_usec: int   # total microseconds spent inside evaluation.compute()
 
 	var is_book: bool
 

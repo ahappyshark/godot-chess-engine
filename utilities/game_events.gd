@@ -10,7 +10,6 @@ signal goblin_low_time(pressure: int)   # ChessGameState.ClockPressure
 
 # --- Move Events ---
 signal move_made(move: Move)
-signal on_search_complete(move: Move)
 #signal player_move_completed(move: ChessMove, state: ChessGameState)
 #signal goblin_move_completed(move: ChessMove, state: ChessGameState)
 signal move_was_blunder(color: int, eval_loss: float)   # ChessPiece.PlayerColor

@@ -16,16 +16,20 @@ var board: Board
 var white_eval: EvaluationData
 var black_eval: EvaluationData
 
-func evaluate(p_board: Board, eval_weights: EvalWeights) -> int:
+# Stored by compute() so weighted_score() can use them without the board.
+var _perspective: int = 1
+var _mate_score: int = 0
+
+# Phase 1: compute all raw component scores for the current position.
+# Results are stored on white_eval / black_eval — no weights applied.
+# Call this once per position; call weighted_score() afterwards for each consumer.
+func compute(p_board: Board) -> void:
 	board = p_board
-	var perspective: int = 1 if board.is_white_to_move else -1
+	_perspective = 1 if board.is_white_to_move else -1
+	_mate_score = check_mate_patterns()
+	if _mate_score != 0:
+		return
 
-	# Check for forced mate patterns FIRST
-	var mate_score = check_mate_patterns()
-	if mate_score != 0:
-		return mate_score * perspective
-
-	# General eval data
 	white_eval = EvaluationData.new()
 	black_eval = EvaluationData.new()
 	var white_material = get_material_info(Board.WHITE_INDEX)
@@ -42,8 +46,21 @@ func evaluate(p_board: Board, eval_weights: EvalWeights) -> int:
 	black_eval.pawn_shield_score = king_pawn_shield(Board.BLACK_INDEX, white_material, white_eval.piece_square_score)
 	white_eval.tactics_score = evaluate_tactics(Board.WHITE_INDEX)
 	black_eval.tactics_score = evaluate_tactics(Board.BLACK_INDEX)
-	
-	return (white_eval.sum(eval_weights) - black_eval.sum(eval_weights)) * perspective
+
+# Phase 2: apply personality weights to already-computed components.
+# Returns centipawns from the side-to-move's perspective (positive = good for mover).
+# Must call compute() first.
+func weighted_score(eval_weights: EvalWeights) -> int:
+	if _mate_score != 0:
+		return _mate_score * _perspective
+	return (white_eval.sum(eval_weights) - black_eval.sum(eval_weights)) * _perspective
+
+# Objective score always from white's perspective (positive = white ahead).
+# Useful for UI elements like the eval bar. Must call compute() first.
+func white_relative_score(eval_weights: EvalWeights) -> int:
+	if _mate_score != 0:
+		return _mate_score
+	return white_eval.sum(eval_weights) - black_eval.sum(eval_weights)
 
 func check_mate_patterns() -> int:
 	return 0

@@ -72,6 +72,5 @@ func minimax(depth: int, alpha: int, beta: int, is_maximizing: bool) -> int:
 
 # Returns white's absolute advantage (positive = white winning)
 func _absolute_evaluate() -> int:
-	var score: int = _eval.evaluate(board, eval_weights)
-	# evaluate() returns perspective-relative; un-flip to get absolute
-	return score if board.is_white_to_move else -score
+	_eval.compute(board)
+	return _eval.white_relative_score(eval_weights)

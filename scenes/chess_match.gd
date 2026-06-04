@@ -137,5 +137,5 @@ func _on_game_over(result: Arbiter.GameResult) -> void:
 	game_end_overlay.visible = true
 
 func _refresh_eval_bar() -> void:
-	_evaluation.evaluate(chess_board.board)
-	eval_bars.update_eval(_evaluation.white_eval.sum() - _evaluation.black_eval.sum())
+	_evaluation.compute(chess_board.board)
+	eval_bars.update_eval(_evaluation.white_relative_score(EvalWeights.new()))
